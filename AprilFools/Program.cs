@@ -8,18 +8,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Media;
 
-//
-//  start base of code coppied from codegasm 4 drunk PC app
-//
-//  Application Name: Drunk PC
-//  Description: Application that generates erratic mouse and keyboard movements and input and generates system sounds and fake dialogs to confuse the user
-//  Topics:
-//    1) Threads
-//    2) System.Windows.Forms namespace & assembly
-//    3) Hidden application
-//
-
-namespace DrunkPC
+namespace AprilFools
 {
     class Program
     {
@@ -34,7 +23,7 @@ namespace DrunkPC
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-            Console.WriteLine("DrunkPC Prank Application by: Jerry (aka. Barnacules)");
+            Console.WriteLine("April Fools Prank by: Dougie Fresh");
 
             // Check for command line arguments and assign the new values
             if (args.Length >= 2)
@@ -147,9 +136,13 @@ namespace DrunkPC
             {
                 // Determine if we're going to play a sound this time through the loop (20% odds)
                 //if (_random.Next(100) > 80)
+                bool rndSound = true;
+                if (rndSound)
                 {
                     // Randomly select a system sound
-                    switch (_random.Next(5))
+                    int sound = _random.Next(5);
+                    sound = 3;
+                    switch (sound)
                     {
                         case 0:
                             SystemSounds.Asterisk.Play();
@@ -167,9 +160,13 @@ namespace DrunkPC
                             SystemSounds.Question.Play();
                             break;
                     }
+                    Thread.Sleep(500);
                 }
-
-                Thread.Sleep(1000);
+                else
+                {
+                    Console.Beep(400, 1000);
+                    Thread.Sleep(101);
+                }
             }
         }
 
