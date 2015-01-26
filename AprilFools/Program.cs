@@ -10,6 +10,14 @@ using System.Media;
 
 namespace AprilFools
 {
+    /*
+     * --ideas
+     * program wil launch and sit silently making noice every hour
+     * make a accelerating beeping noise perioticly
+     * start odd windows (like ads)
+     * 
+     */
+
     class Program
     {
         public static Random _random = new Random();
