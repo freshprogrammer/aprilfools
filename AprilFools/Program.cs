@@ -15,11 +15,14 @@ namespace AprilFools
      * program wil launch and sit silently making noice every hour
      * make a accelerating beeping noise perioticly
      * start odd windows (like ads)
+     * popup random error mssages for chrome & memmory
      * 
      */
 
     class Program
     {
+        const bool _TESTING = true;
+
         public static Random _random = new Random();
 
         public static int _startupDelaySeconds = 0;
@@ -40,6 +43,18 @@ namespace AprilFools
                 _totalDurationSeconds = Convert.ToInt32(args[1]);
             }
 
+            if (_TESTING)
+            {
+                DialogResult r = MessageBox.Show(
+                    "Running in testing mode. Press OK to start.",
+                    "\"The\" App",
+                    MessageBoxButtons.OKCancel,
+                    MessageBoxIcon.None);
+
+                if (r == DialogResult.Cancel)
+                    return;
+            }
+
             // Create all threads that manipulate all of the inputs and outputs to the system
             Thread drunkMouseThread = new Thread(new ThreadStart(DrunkMouseThread));
             Thread drunkKeyboardThread = new Thread(new ThreadStart(DrunkKeyboardThread));
@@ -54,16 +69,21 @@ namespace AprilFools
             }
             Console.WriteLine("starting");
 
+
+
             // Start all of the threads
             //drunkMouseThread.Start();
             //drunkKeyboardThread.Start();
-            drunkSoundThread.Start();
+            //drunkSoundThread.Start();
             //drunkPopupThread.Start();
 
-            future = DateTime.Now.AddSeconds(_totalDurationSeconds);
-            while (future > DateTime.Now)
+            if (_totalDurationSeconds > 0)
             {
-                Thread.Sleep(500);
+                future = DateTime.Now.AddSeconds(_totalDurationSeconds);
+                while (future > DateTime.Now)
+                {
+                    Thread.Sleep(500);
+                }
             }
 
             Console.WriteLine("Terminating all threads");
@@ -185,6 +205,9 @@ namespace AprilFools
         {
             Console.WriteLine("DrunkPopupThread Started");
 
+            const int popupInterval = 1000 * 60 * 90;//90 minutes
+            const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
+
             while (true)
             {
                 // Every 10 seconds roll the dice and 10% of the time show a dialog
@@ -195,10 +218,10 @@ namespace AprilFools
                     {
                         case 0:
                             MessageBox.Show(
-                               "Internet explorer has stopped working",
-                                "Internet Explorer",
+                               "Chrome is dangerously low on resources.",
+                                "Chrome",
                                 MessageBoxButtons.OK,
-                                MessageBoxIcon.Error);
+                                MessageBoxIcon.Warning);
                             break;
                         case 1:
                             MessageBox.Show(
@@ -210,9 +233,123 @@ namespace AprilFools
                     }
                 }
 
-                Thread.Sleep(10000);
+                int variance = _random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance; //*2 for +/-
+                Thread.Sleep(popupInterval + variance);
             }
         }
         #endregion
+    }
+
+    struct Possibility
+    {
+        static int Next_ID;
+
+        public int ID;
+        public string Name;
+        public float Weight;
+        public float Offset;
+        public float UpperBound { get { return Weight + Offset; } }
+
+        public Possibility(float weight, string name)
+        {
+            ID = Next_ID++;
+            Name = name;
+            Weight = weight;
+            Offset = 0;
+        }
+
+        public override string ToString()
+        {
+            return ToStringRange();
+        }
+
+        public string ToStringWeight()
+        {
+            return Name + " - " + Weight;
+        }
+
+        public string ToStringRange()
+        {
+            return Name + ": (" + Offset + " - " + (Weight + Offset) + ")";
+        }
+    }
+
+    class Choice
+    {
+        private List<Possibility> possibilities;
+        public float TotalWeight = 0;
+        public static float LastValue = 0;
+
+        public Choice()
+        {
+            possibilities = new List<Possibility>();
+        }
+
+        public Choice(Possibility pos)
+            : base()
+        {
+            AddPossibility(pos);
+        }
+
+        public Possibility AddPossibility(float weight, string name)
+        {
+            Possibility pos = new Possibility(weight, name);
+            return AddPossibility(pos);
+        }
+
+        public Possibility AddPossibility(Possibility pos)
+        {
+            if (pos.Weight > 0)
+            {
+                pos.Offset = TotalWeight;//offset at end of last choice
+                TotalWeight += pos.Weight;
+                possibilities.Add(pos);
+            }
+            return pos;
+        }
+
+        public Possibility RandomChoice()
+        {
+            float val = (float)(Program._random.NextDouble() * TotalWeight);
+            return GetChoice(val);
+        }
+
+        public Possibility GetChoice(float val)
+        {
+            val = val % TotalWeight;
+            LastValue = val;
+            foreach (Possibility pos in possibilities)
+            {
+                if (val >= pos.Offset && val < pos.UpperBound)
+                {
+                    return pos;
+                }
+            }
+
+            return new Possibility();
+        }
+
+
+        public string ListPossibilities()
+        {
+            string result = "";
+            foreach (Possibility pos in possibilities)
+            {
+                result += pos.ToStringRange() + "\n";
+            }
+
+            return result;
+        }
+
+        public static bool SingleChoice(Possibility pos)
+        {
+            float val = (float)(Program._random.NextDouble() * 1);
+            return val < pos.Weight;
+        }
+
+        public static bool SingleChoice(float percentage, string name)
+        {
+            return SingleChoice(new Possibility(percentage, name));
+        }
     }
 }
