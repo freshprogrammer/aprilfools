@@ -210,6 +210,18 @@ namespace AprilFools
 
             while (true)
             {
+                //test/demo code for choices
+                Choice popup = new Choice();
+                popup.AddPossibility(20, "Chrome");
+                popup.AddPossibility(20, "IE");
+                popup.AddPossibility(20, "Memory");
+                popup.AddPossibility(1, "Calc");
+
+                if(popup.RandomChoice().ID == 0)
+                    ;//chrome
+                
+
+
                 // Every 10 seconds roll the dice and 10% of the time show a dialog
                 if (_random.Next(100) > 90)
                 {
