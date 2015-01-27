@@ -47,11 +47,14 @@ namespace AprilFools
         /// <param name="args"></param>
         static void Main(string[] args)
         {
-
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
-
             Console.WriteLine("April Fools Prank by: Dougie Fresh");
+
+#if _TESTING
+            //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
+
+            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+#endif
 
             // Check for command line arguments and assign the new values
             if (args.Length >= 2)
@@ -59,17 +62,6 @@ namespace AprilFools
                 _startupDelaySeconds = Convert.ToInt32(args[0]);
                 _totalDurationSeconds = Convert.ToInt32(args[1]);
             }
-
-#if _TESTING
-            DialogResult r = MessageBox.Show(
-                "Running in testing mode. Press OK to start.",
-                "\"The\" App",
-                MessageBoxButtons.OKCancel,
-                MessageBoxIcon.Warning);
-
-            if (r == DialogResult.Cancel)
-                return;
-#endif
 
             // Create all threads that manipulate all of the inputs and outputs to the system
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
@@ -111,11 +103,10 @@ namespace AprilFools
         {
             
 #if _TESTING
-            MessageBox.Show(
-                "Exiting application.",
-                "\"The\" App",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.None);
+            //MessageBox.Show("Exiting application.","\"The\" App",MessageBoxButtons.OK,MessageBoxIcon.None);
+
+            Beep(BeepPitch.Low, BeepDurration.Shrt);
+            Beep(BeepPitch.Low, BeepDurration.Shrt);
 #endif
 
             // Kill all threads and exit application
