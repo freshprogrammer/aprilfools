@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define _TESTING
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,8 +26,6 @@ namespace AprilFools
 
     class Program
     {
-        const bool _TESTING = true;
-
         public static Random _random = new Random();
 
         public static int _startupDelaySeconds = 0;
@@ -47,6 +47,10 @@ namespace AprilFools
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+
+            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+
             Console.WriteLine("April Fools Prank by: Dougie Fresh");
 
             // Check for command line arguments and assign the new values
@@ -56,17 +60,16 @@ namespace AprilFools
                 _totalDurationSeconds = Convert.ToInt32(args[1]);
             }
 
-            if (_TESTING)
-            {
-                DialogResult r = MessageBox.Show(
-                    "Running in testing mode. Press OK to start.",
-                    "\"The\" App",
-                    MessageBoxButtons.OKCancel,
-                    MessageBoxIcon.None);
+#if _TESTING
+            DialogResult r = MessageBox.Show(
+                "Running in testing mode. Press OK to start.",
+                "\"The\" App",
+                MessageBoxButtons.OKCancel,
+                MessageBoxIcon.Warning);
 
-                if (r == DialogResult.Cancel)
-                    return;
-            }
+            if (r == DialogResult.Cancel)
+                return;
+#endif
 
             // Create all threads that manipulate all of the inputs and outputs to the system
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
@@ -106,6 +109,15 @@ namespace AprilFools
 
         public static void ExitApplication()
         {
+            
+#if _TESTING
+            MessageBox.Show(
+                "Exiting application.",
+                "\"The\" App",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.None);
+#endif
+
             // Kill all threads and exit application
             eraticMouseThread.Abort();
             eraticKeyboardThread.Abort();
@@ -113,13 +125,19 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
+        #region Generic Functions
+        public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
+        public enum BeepDurration { Shrt = 150, Medium = 250, Long = 500 };
+        public static void Beep(BeepPitch p, BeepDurration d) { Console.Beep((int)p, (int)d); }
+        #endregion
+
         #region Thread Functions
         /// <summary>
         /// This thread will randomly affect the mouse movements to screw with the end user
         /// </summary>
         public static void EraticMouseThread()
         {
-            Console.WriteLine("DrunkMouseThread Started");
+            Console.WriteLine("EraticMouseThread Started");
 
             int moveX = 0;
             int moveY = 0;
@@ -149,7 +167,7 @@ namespace AprilFools
         /// </summary>
         public static void EraticKeyboardThread()
         {
-            Console.WriteLine("DrunkKeyboardThread Started");
+            Console.WriteLine("EraticKeyboardThread Started");
 
             while (_eraticKeyboardThreadRunning)
             {
@@ -176,7 +194,7 @@ namespace AprilFools
         /// </summary>
         public static void RandomSoundThread()
         {
-            Console.WriteLine("DrunkSoundThread Started");
+            Console.WriteLine("RandomSoundThread Started");
 
             while (_randomSoundThreadRunning)
             {
@@ -221,7 +239,7 @@ namespace AprilFools
         /// </summary>
         public static void RandomPopupThread()
         {
-            Console.WriteLine("DrunkPopupThread Started");
+            Console.WriteLine("RandomPopupThread Started");
 
             const int popupInterval = 1000 * 60 * 90;//90 minutes
             const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
