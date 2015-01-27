@@ -11,8 +11,11 @@ using System.Media;
 namespace AprilFools
 {
     /*
+     * This application will pose as java update application jucheck.exe with app decriptions and icon to match
+     * 
      * --ideas
-     * program wil launch and sit silently making noice every hour
+     * program wil launch and sit silently 
+     * make noise every hour
      * make a accelerating beeping noise perioticly
      * start odd windows (like ads)
      * popup random error mssages for chrome & memmory
@@ -27,6 +30,16 @@ namespace AprilFools
 
         public static int _startupDelaySeconds = 0;
         public static int _totalDurationSeconds = 5;
+
+        public static bool _eraticMouseThreadRunning = false;
+        public static bool _eraticKeyboardThreadRunning = false;
+        public static bool _randomSoundThreadRunning = false;
+        public static bool _randomPopupThreadRunning = false;
+
+        private static Thread eraticMouseThread;
+        private static Thread eraticKeyboardThread;
+        private static Thread randomSoundThread;
+        private static Thread randomPopupThread;
 
         /// <summary>
         /// Entry point for prank application
@@ -56,10 +69,10 @@ namespace AprilFools
             }
 
             // Create all threads that manipulate all of the inputs and outputs to the system
-            Thread drunkMouseThread = new Thread(new ThreadStart(DrunkMouseThread));
-            Thread drunkKeyboardThread = new Thread(new ThreadStart(DrunkKeyboardThread));
-            Thread drunkSoundThread = new Thread(new ThreadStart(DrunkSoundThread));
-            Thread drunkPopupThread = new Thread(new ThreadStart(DrunkPopupThread));
+            eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
+            eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
+            randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
+            randomPopupThread = new Thread(new ThreadStart(RandomPopupThread));
 
             DateTime future = DateTime.Now.AddSeconds(_startupDelaySeconds);
             Console.WriteLine("Waiting " + _startupDelaySeconds + " seconds before starting threads");
@@ -72,10 +85,10 @@ namespace AprilFools
 
 
             // Start all of the threads
-            //drunkMouseThread.Start();
-            //drunkKeyboardThread.Start();
-            //drunkSoundThread.Start();
-            //drunkPopupThread.Start();
+            eraticMouseThread.Start();
+            eraticKeyboardThread.Start();
+            randomSoundThread.Start();
+            randomPopupThread.Start();
 
             if (_totalDurationSeconds > 0)
             {
@@ -88,33 +101,38 @@ namespace AprilFools
 
             Console.WriteLine("Terminating all threads");
 
+            ExitApplication();
+        }
+
+        public static void ExitApplication()
+        {
             // Kill all threads and exit application
-            drunkMouseThread.Abort();
-            drunkKeyboardThread.Abort();
-            drunkSoundThread.Abort();
-            drunkPopupThread.Abort();
+            eraticMouseThread.Abort();
+            eraticKeyboardThread.Abort();
+            randomSoundThread.Abort();
+            randomPopupThread.Abort();
         }
 
         #region Thread Functions
         /// <summary>
         /// This thread will randomly affect the mouse movements to screw with the end user
         /// </summary>
-        public static void DrunkMouseThread()
+        public static void EraticMouseThread()
         {
             Console.WriteLine("DrunkMouseThread Started");
 
             int moveX = 0;
             int moveY = 0;
 
-            while (true)
+            while (_eraticMouseThreadRunning)
             {
                 // Console.WriteLine(Cursor.Position.ToString());
 
                 if (_random.Next(100) > 50)
                 {
                     // Generate the random amount to move the cursor on X and Y
-                    moveX = _random.Next(20) - 10;
-                    moveY = _random.Next(20) - 10;
+                    moveX = _random.Next(20+1) - 10;
+                    moveY = _random.Next(20+1) - 10;
 
                     // Change mouse cursor position to new random coordinates
                     Cursor.Position = new System.Drawing.Point(
@@ -129,16 +147,16 @@ namespace AprilFools
         /// <summary>
         /// This will generate random keyboard output to screw with the end user
         /// </summary>
-        public static void DrunkKeyboardThread()
+        public static void EraticKeyboardThread()
         {
             Console.WriteLine("DrunkKeyboardThread Started");
 
-            while (true)
+            while (_eraticKeyboardThreadRunning)
             {
-                if (_random.Next(100) > 95)
+                if (_random.Next(100) >= 95)
                 {
                     // Generate a random capitol letter
-                    char key = (char)(_random.Next(25) + 65);
+                    char key = (char)(_random.Next(26) + 65);
 
                     // 50/50 make it lower case
                     if (_random.Next(2) == 0)
@@ -156,14 +174,14 @@ namespace AprilFools
         /// <summary>
         /// This will play system sounds at random to screw with the end user
         /// </summary>
-        public static void DrunkSoundThread()
+        public static void RandomSoundThread()
         {
             Console.WriteLine("DrunkSoundThread Started");
 
-            while (true)
+            while (_randomSoundThreadRunning)
             {
                 // Determine if we're going to play a sound this time through the loop (20% odds)
-                //if (_random.Next(100) > 80)
+                //if (_random.Next(100) >= 80)
                 bool rndSound = true;
                 if (rndSound)
                 {
@@ -201,62 +219,55 @@ namespace AprilFools
         /// <summary>
         /// This thread will popup fake error notifications to make the user go crazy and pull their hair out
         /// </summary>
-        public static void DrunkPopupThread()
+        public static void RandomPopupThread()
         {
             Console.WriteLine("DrunkPopupThread Started");
 
             const int popupInterval = 1000 * 60 * 90;//90 minutes
             const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
+            const int oddsOfSeeingAPopupEachInterval = 10;
 
-            while (true)
+            Choice popup = new Choice();
+            Possibility pos_chrome = popup.AddPossibility(5, "Chrome");
+            Possibility pos_mem = popup.AddPossibility(20, "Memory");
+            //Possibility pos_ie = popup.AddPossibility(20, "IE");
+            //Possibility pos_calc = popup.AddPossibility(1, "Calc");
+
+            while (_randomPopupThreadRunning)
             {
-                //test/demo code for choices
-                Choice popup = new Choice();
-                popup.AddPossibility(20, "Chrome");
-                popup.AddPossibility(20, "IE");
-                popup.AddPossibility(20, "Memory");
-                popup.AddPossibility(1, "Calc");
-
-                if(popup.RandomChoice().ID == 0)
-                    ;//chrome
-                
-
-
                 // Every 10 seconds roll the dice and 10% of the time show a dialog
-                if (_random.Next(100) > 90)
+                if (_random.Next(100) >= (100-oddsOfSeeingAPopupEachInterval))
                 {
                     // Determine which message to show user
-                    switch (_random.Next(2))
-                    {
-                        case 0:
+                    if (popup.RandomChoice().ID == pos_chrome.ID)
                             MessageBox.Show(
                                "Chrome is dangerously low on resources.",
                                 "Chrome",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Warning);
-                            break;
-                        case 1:
+                    else if (popup.RandomChoice().ID == pos_mem.ID)
                             MessageBox.Show(
                                "Your system is running low on resources",
                                 "Microsoft Windows",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Warning);
-                            break;
-                    }
                 }
 
-                int variance = _random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance; //*2 for +/-
+                int variance = _random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 Thread.Sleep(popupInterval + variance);
             }
         }
         #endregion
     }
 
+    /// <summary>
+    /// This is for use with the choice class. NOTE: this is intended for use within a since instance of a choice. multiple use can cause issues with both the ID values and offset used in calculations
+    /// </summary>
     struct Possibility
     {
         static int Next_ID;
 
-        public int ID;
+        public readonly int ID;
         public string Name;
         public float Weight;
         public float Offset;
