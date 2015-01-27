@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 using System.Media;
+using Generics;
 
 namespace AprilFools
 {
@@ -24,12 +25,11 @@ namespace AprilFools
      * 
      */
 
-    class Program
+    class Pranker
     {
-        public static Random _random = new Random();
 
         public static int _startupDelaySeconds = 0;
-        public static int _totalDurationSeconds = 5;
+        public static int _totalDurationSeconds = 10;
 
         public static bool _eraticMouseThreadRunning = false;
         public static bool _eraticKeyboardThreadRunning = false;
@@ -51,9 +51,8 @@ namespace AprilFools
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
-
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Medium, Generics.BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Shrt);
 #endif
 
             // Check for command line arguments and assign the new values
@@ -105,8 +104,8 @@ namespace AprilFools
 #if _TESTING
             //MessageBox.Show("Exiting application.","\"The\" App",MessageBoxButtons.OK,MessageBoxIcon.None);
 
-            Beep(BeepPitch.Low, BeepDurration.Shrt);
-            Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
 #endif
 
             // Kill all threads and exit application
@@ -116,11 +115,6 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
-        #region Generic Functions
-        public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
-        public enum BeepDurration { Shrt = 150, Medium = 250, Long = 500 };
-        public static void Beep(BeepPitch p, BeepDurration d) { Console.Beep((int)p, (int)d); }
-        #endregion
 
         #region Thread Functions
         /// <summary>
@@ -137,11 +131,11 @@ namespace AprilFools
             {
                 // Console.WriteLine(Cursor.Position.ToString());
 
-                if (_random.Next(100) > 50)
+                if (GenericsClass._random.Next(100) > 50)
                 {
                     // Generate the random amount to move the cursor on X and Y
-                    moveX = _random.Next(20+1) - 10;
-                    moveY = _random.Next(20+1) - 10;
+                    moveX = GenericsClass._random.Next(20 + 1) - 10;
+                    moveY = GenericsClass._random.Next(20 + 1) - 10;
 
                     // Change mouse cursor position to new random coordinates
                     Cursor.Position = new System.Drawing.Point(
@@ -162,13 +156,13 @@ namespace AprilFools
 
             while (_eraticKeyboardThreadRunning)
             {
-                if (_random.Next(100) >= 95)
+                if (GenericsClass._random.Next(100) >= 95)
                 {
                     // Generate a random capitol letter
-                    char key = (char)(_random.Next(26) + 65);
+                    char key = (char)(GenericsClass._random.Next(26) + 65);
 
                     // 50/50 make it lower case
-                    if (_random.Next(2) == 0)
+                    if (GenericsClass._random.Next(2) == 0)
                     {
                         key = Char.ToLower(key);
                     }
@@ -176,7 +170,7 @@ namespace AprilFools
                     SendKeys.SendWait(key.ToString());
                 }
 
-                Thread.Sleep(_random.Next(500));
+                Thread.Sleep(GenericsClass._random.Next(500));
             }
         }
 
@@ -195,7 +189,7 @@ namespace AprilFools
                 if (rndSound)
                 {
                     // Randomly select a system sound
-                    int sound = _random.Next(5);
+                    int sound = GenericsClass._random.Next(5);
                     sound = 3;
                     switch (sound)
                     {
@@ -245,7 +239,7 @@ namespace AprilFools
             while (_randomPopupThreadRunning)
             {
                 // Every 10 seconds roll the dice and 10% of the time show a dialog
-                if (_random.Next(100) >= (100-oddsOfSeeingAPopupEachInterval))
+                if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
                 {
                     // Determine which message to show user
                     if (popup.RandomChoice().ID == pos_chrome.ID)
@@ -262,126 +256,10 @@ namespace AprilFools
                                 MessageBoxIcon.Warning);
                 }
 
-                int variance = _random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
+                int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 Thread.Sleep(popupInterval + variance);
             }
         }
         #endregion
-    }
-
-    /// <summary>
-    /// This is for use with the choice class. NOTE: this is intended for use within a since instance of a choice. multiple use can cause issues with both the ID values and offset used in calculations
-    /// </summary>
-    struct Possibility
-    {
-        static int Next_ID;
-
-        public readonly int ID;
-        public string Name;
-        public float Weight;
-        public float Offset;
-        public float UpperBound { get { return Weight + Offset; } }
-
-        public Possibility(float weight, string name)
-        {
-            ID = Next_ID++;
-            Name = name;
-            Weight = weight;
-            Offset = 0;
-        }
-
-        public override string ToString()
-        {
-            return ToStringRange();
-        }
-
-        public string ToStringWeight()
-        {
-            return Name + " - " + Weight;
-        }
-
-        public string ToStringRange()
-        {
-            return Name + ": (" + Offset + " - " + (Weight + Offset) + ")";
-        }
-    }
-
-    class Choice
-    {
-        private List<Possibility> possibilities;
-        public float TotalWeight = 0;
-        public static float LastValue = 0;
-
-        public Choice()
-        {
-            possibilities = new List<Possibility>();
-        }
-
-        public Choice(Possibility pos)
-            : base()
-        {
-            AddPossibility(pos);
-        }
-
-        public Possibility AddPossibility(float weight, string name)
-        {
-            Possibility pos = new Possibility(weight, name);
-            return AddPossibility(pos);
-        }
-
-        public Possibility AddPossibility(Possibility pos)
-        {
-            if (pos.Weight > 0)
-            {
-                pos.Offset = TotalWeight;//offset at end of last choice
-                TotalWeight += pos.Weight;
-                possibilities.Add(pos);
-            }
-            return pos;
-        }
-
-        public Possibility RandomChoice()
-        {
-            float val = (float)(Program._random.NextDouble() * TotalWeight);
-            return GetChoice(val);
-        }
-
-        public Possibility GetChoice(float val)
-        {
-            val = val % TotalWeight;
-            LastValue = val;
-            foreach (Possibility pos in possibilities)
-            {
-                if (val >= pos.Offset && val < pos.UpperBound)
-                {
-                    return pos;
-                }
-            }
-
-            return new Possibility();
-        }
-
-
-        public string ListPossibilities()
-        {
-            string result = "";
-            foreach (Possibility pos in possibilities)
-            {
-                result += pos.ToStringRange() + "\n";
-            }
-
-            return result;
-        }
-
-        public static bool SingleChoice(Possibility pos)
-        {
-            float val = (float)(Program._random.NextDouble() * 1);
-            return val < pos.Weight;
-        }
-
-        public static bool SingleChoice(float percentage, string name)
-        {
-            return SingleChoice(new Possibility(percentage, name));
-        }
     }
 }
