@@ -25,9 +25,8 @@ namespace AprilFools
      * 
      */
 
-    class Pranker
+    public class Pranker
     {
-
         public static int _startupDelaySeconds = 0;
         public static int _totalDurationSeconds = 10;
 
@@ -55,6 +54,12 @@ namespace AprilFools
             GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Shrt);
 #endif
 
+            //register hotkey(s)
+            int idA = HotKeyManager.RegisterHotKey(Keys.A, KeyModifiers.Alt);
+            int idS = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
+            int idD = HotKeyManager.RegisterHotKey(Keys.D, KeyModifiers.Alt);
+            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
+
             // Check for command line arguments and assign the new values
             if (args.Length >= 2)
             {
@@ -76,8 +81,6 @@ namespace AprilFools
             }
             Console.WriteLine("starting");
 
-
-
             // Start all of the threads
             eraticMouseThread.Start();
             eraticKeyboardThread.Start();
@@ -98,9 +101,15 @@ namespace AprilFools
             ExitApplication();
         }
 
+        static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
+        {
+            Console.WriteLine("Hit me! - " + e);
+            Console.WriteLine("Hit me! - " + e.Key);
+        }
+
         public static void ExitApplication()
         {
-            
+
 #if _TESTING
             //MessageBox.Show("Exiting application.","\"The\" App",MessageBoxButtons.OK,MessageBoxIcon.None);
 
@@ -123,6 +132,9 @@ namespace AprilFools
         public static void EraticMouseThread()
         {
             Console.WriteLine("EraticMouseThread Started");
+            Thread.CurrentThread.Name = "EraticMouseThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             int moveX = 0;
             int moveY = 0;
@@ -153,6 +165,9 @@ namespace AprilFools
         public static void EraticKeyboardThread()
         {
             Console.WriteLine("EraticKeyboardThread Started");
+            Thread.CurrentThread.Name = "EraticKeyboardThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             while (_eraticKeyboardThreadRunning)
             {
@@ -180,6 +195,9 @@ namespace AprilFools
         public static void RandomSoundThread()
         {
             Console.WriteLine("RandomSoundThread Started");
+            Thread.CurrentThread.Name = "RandomSoundThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             while (_randomSoundThreadRunning)
             {
@@ -225,6 +243,9 @@ namespace AprilFools
         public static void RandomPopupThread()
         {
             Console.WriteLine("RandomPopupThread Started");
+            Thread.CurrentThread.Name = "RandomPopupThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             const int popupInterval = 1000 * 60 * 90;//90 minutes
             const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
@@ -243,17 +264,17 @@ namespace AprilFools
                 {
                     // Determine which message to show user
                     if (popup.RandomChoice().ID == pos_chrome.ID)
-                            MessageBox.Show(
-                               "Chrome is dangerously low on resources.",
-                                "Chrome",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
+                        MessageBox.Show(
+                           "Chrome is dangerously low on resources.",
+                            "Chrome",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
                     else if (popup.RandomChoice().ID == pos_mem.ID)
-                            MessageBox.Show(
-                               "Your system is running low on resources",
-                                "Microsoft Windows",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
+                        MessageBox.Show(
+                           "Your system is running low on resources",
+                            "Microsoft Windows",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
                 }
 
                 int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX

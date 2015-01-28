@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Generics
 {
@@ -14,150 +15,131 @@ namespace Generics
     }
     #endregion
 
-    #region Keyboard Hooks
-    //http://stackoverflow.com/questions/2450373/set-global-hotkeys-using-c-sharp
-    public sealed class KeyboardHook : IDisposable
+
+    #region keyboard testing
+    //used implementation from here http://stackoverflow.com/questions/3654787/global-hotkey-in-console-application
+
+    public static class HotKeyManager
     {
-        // Registers a hot key with Windows.
-        [DllImport("user32.dll")]
-        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
-        // Unregisters the hot key with Windows.
-        [DllImport("user32.dll")]
-        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
+        public static event EventHandler<HotKeyEventArgs> HotKeyPressed;
 
-        /// <summary>
-        /// Represents the window that is used internally to get the messages.
-        /// </summary>
-        private class Window : NativeWindow, IDisposable
+        public static int RegisterHotKey(Keys key, KeyModifiers modifiers)
         {
-            private static int WM_HOTKEY = 0x0312;
+            _windowReadyEvent.WaitOne();
+            int id = System.Threading.Interlocked.Increment(ref _id);
+            _wnd.Invoke(new RegisterHotKeyDelegate(RegisterHotKeyInternal), _hwnd, id, (uint)modifiers, (uint)key);
+            return id;
+        }
 
-            public Window()
+        public static void UnregisterHotKey(int id)
+        {
+            _wnd.Invoke(new UnRegisterHotKeyDelegate(UnRegisterHotKeyInternal), _hwnd, id);
+        }
+
+        delegate void RegisterHotKeyDelegate(IntPtr hwnd, int id, uint modifiers, uint key);
+        delegate void UnRegisterHotKeyDelegate(IntPtr hwnd, int id);
+
+        private static void RegisterHotKeyInternal(IntPtr hwnd, int id, uint modifiers, uint key)
+        {
+            RegisterHotKey(hwnd, id, modifiers, key);
+        }
+
+        private static void UnRegisterHotKeyInternal(IntPtr hwnd, int id)
+        {
+            UnregisterHotKey(_hwnd, id);
+        }
+
+        private static void OnHotKeyPressed(HotKeyEventArgs e)
+        {
+            if (HotKeyManager.HotKeyPressed != null)
             {
-                // create the handle for the window.
-                this.CreateHandle(new CreateParams());
+                HotKeyManager.HotKeyPressed(null, e);
+            }
+        }
+
+        private static volatile MessageWindow _wnd;
+        private static volatile IntPtr _hwnd;
+        private static ManualResetEvent _windowReadyEvent = new ManualResetEvent(false);
+        static HotKeyManager()
+        {
+            Thread messageLoop = new Thread(delegate()
+            {
+                Application.Run(new MessageWindow());
+            });
+            messageLoop.Name = "MessageLoopThread";
+            messageLoop.IsBackground = true;
+            messageLoop.Start();
+        }
+
+        private class MessageWindow : Form
+        {
+            public MessageWindow()
+            {
+                _wnd = this;
+                _hwnd = this.Handle;
+                _windowReadyEvent.Set();
             }
 
-            /// <summary>
-            /// Overridden to get the notifications.
-            /// </summary>
-            /// <param name="m"></param>
             protected override void WndProc(ref Message m)
             {
-                base.WndProc(ref m);
-
-                // check if we got a hot key pressed.
                 if (m.Msg == WM_HOTKEY)
                 {
-                    // get the keys.
-                    Keys key = (Keys)(((int)m.LParam >> 16) & 0xFFFF);
-                    ModifierKeys modifier = (ModifierKeys)((int)m.LParam & 0xFFFF);
-
-                    // invoke the event to notify the parent.
-                    if (KeyPressed != null)
-                        KeyPressed(this, new KeyPressedEventArgs(modifier, key));
+                    HotKeyEventArgs e = new HotKeyEventArgs(m.LParam);
+                    HotKeyManager.OnHotKeyPressed(e);
                 }
+
+                base.WndProc(ref m);
             }
 
-            public event EventHandler<KeyPressedEventArgs> KeyPressed;
-
-            #region IDisposable Members
-
-            public void Dispose()
+            protected override void SetVisibleCore(bool value)
             {
-                this.DestroyHandle();
+                // Ensure the window never becomes visible
+                base.SetVisibleCore(false);
             }
 
-            #endregion
+            private const int WM_HOTKEY = 0x312;
         }
 
-        private Window _window = new Window();
-        private int _currentId;
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool RegisterHotKey(IntPtr hWnd, int id, uint fsModifiers, uint vk);
 
-        public KeyboardHook()
-        {
-            // register the event of the inner native window.
-            _window.KeyPressed += delegate(object sender, KeyPressedEventArgs args)
-            {
-                if (KeyPressed != null)
-                    KeyPressed(this, args);
-            };
-        }
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        /// <summary>
-        /// Registers a hot key in the system.
-        /// </summary>
-        /// <param name="modifier">The modifiers that are associated with the hot key.</param>
-        /// <param name="key">The key itself that is associated with the hot key.</param>
-        public void RegisterHotKey(ModifierKeys modifier, Keys key)
-        {
-            // increment the counter.
-            _currentId = _currentId + 1;
-
-            // register the hot key.
-            if (!RegisterHotKey(_window.Handle, _currentId, (uint)modifier, (uint)key))
-                throw new InvalidOperationException("Couldn’t register the hot key.");
-        }
-
-        /// <summary>
-        /// A hot key has been pressed.
-        /// </summary>
-        public event EventHandler<KeyPressedEventArgs> KeyPressed;
-
-        #region IDisposable Members
-
-        public void Dispose()
-        {
-            // unregister all the registered hot keys.
-            for (int i = _currentId; i > 0; i--)
-            {
-                UnregisterHotKey(_window.Handle, i);
-            }
-
-            // dispose the inner native window.
-            _window.Dispose();
-        }
-
-        #endregion
+        private static int _id = 0;
     }
 
-    /// <summary>
-    /// Event Args for the event that is fired after the hot key has been pressed.
-    /// </summary>
-    public class KeyPressedEventArgs : EventArgs
+
+    public class HotKeyEventArgs : EventArgs
     {
-        private ModifierKeys _modifier;
-        private Keys _key;
+        public readonly Keys Key;
+        public readonly KeyModifiers Modifiers;
 
-        internal KeyPressedEventArgs(ModifierKeys modifier, Keys key)
+        public HotKeyEventArgs(Keys key, KeyModifiers modifiers)
         {
-            _modifier = modifier;
-            _key = key;
+            this.Key = key;
+            this.Modifiers = modifiers;
         }
 
-        public ModifierKeys Modifier
+        public HotKeyEventArgs(IntPtr hotKeyParam)
         {
-            get { return _modifier; }
-        }
-
-        public Keys Key
-        {
-            get { return _key; }
+            uint param = (uint)hotKeyParam.ToInt64();
+            Key = (Keys)((param & 0xffff0000) >> 16);
+            Modifiers = (KeyModifiers)(param & 0x0000ffff);
         }
     }
 
-    /// <summary>
-    /// The enumeration of possible modifiers.
-    /// </summary>
     [Flags]
-    public enum ModifierKeys : uint
+    public enum KeyModifiers
     {
         Alt = 1,
         Control = 2,
         Shift = 4,
-        Win = 8
+        Windows = 8,
+        NoRepeat = 0x4000
     }
-    #endregion
+
+    #endregion keyboard hotkeys
 
     #region Beeps
     public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
