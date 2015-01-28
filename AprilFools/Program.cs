@@ -32,12 +32,13 @@ namespace AprilFools
 
     public class Pranker
     {
-        public static int _startupDelaySeconds = 0;
-
         private static bool _applicationRunning = true;
-        private static bool _allPrankingEnabled = false;
+        private static bool _allPrankingEnabled = false;// set false if delayed start
 
         private static int _mainThreadPollingInterval = 50;//sleep time for main thread
+
+        private static DateTime _delayedStartTime;
+        private static bool _delayedStartEnabled = false;
 
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
@@ -55,6 +56,7 @@ namespace AprilFools
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            Thread.CurrentThread.Name = "Pranker Main Thread";
             Console.WriteLine("April Fools Prank by: Dougie Fresh");
 
 #if _TESTING
@@ -69,19 +71,21 @@ namespace AprilFools
             HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
 
-            // Check for command line arguments and assign the new values
-            if (args.Length >= 2)
+            // Check for command line arguments
+            int startDelay = 0;
+            if (args.Length >= 1)
             {
-                _startupDelaySeconds = Convert.ToInt32(args[0]);
+                startDelay = Convert.ToInt32(args[0]);
             }
 
-
-            DateTime future = DateTime.Now.AddSeconds(_startupDelaySeconds);
-            Console.WriteLine("Waiting " + _startupDelaySeconds + " seconds before starting threads");
-            while (future > DateTime.Now)
+            //setup delayed start
+            if (startDelay > 0)
             {
-                Thread.Sleep(500);
+                _allPrankingEnabled = false;
+                _delayedStartEnabled = true;
+                _delayedStartTime = DateTime.Now.AddSeconds(startDelay);
             }
+
             Console.WriteLine("Starting");
             
             // Create all threads that manipulate all of the inputs and outputs to the system
@@ -104,7 +108,16 @@ namespace AprilFools
             //dont start a new thread, just use the base thread
             while (_applicationRunning)
             {
+                //check for delated start
+                if (_delayedStartEnabled && _delayedStartTime <= DateTime.Now)
+                {
+                    _allPrankingEnabled = true;
+                    _delayedStartEnabled = false;
+                }
+                
                 //check for timed events here
+
+
 
                 Thread.Sleep(_mainThreadPollingInterval);
             }
