@@ -9,11 +9,17 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Windows.Forms;
 using System.Media;
+using Generics;
 
 namespace AprilFools
 {
     /*
      * This application will pose as java update application jucheck.exe with app decriptions and icon to match
+     * 
+     * Hotkeys:
+     * CTRL+WIN+F2 Gloabl start
+     * CTRL+WIN+F4 Gloabl pause
+     * Alt+Shfit+F4 kill application - non reversable without manual restart
      * 
      * --ideas
      * program wil launch and sit silently 
@@ -24,17 +30,20 @@ namespace AprilFools
      * 
      */
 
-    class Program
+    public class Pranker
     {
-        public static Random _random = new Random();
+        private static bool _applicationRunning = true;
+        private static bool _allPrankingEnabled = false;// set false if delayed start
 
-        public static int _startupDelaySeconds = 0;
-        public static int _totalDurationSeconds = 5;
+        private static int _mainThreadPollingInterval = 50;//sleep time for main thread
 
-        public static bool _eraticMouseThreadRunning = false;
-        public static bool _eraticKeyboardThreadRunning = false;
-        public static bool _randomSoundThreadRunning = false;
-        public static bool _randomPopupThreadRunning = false;
+        private static DateTime _delayedStartTime;
+        private static bool _delayedStartEnabled = false;
+
+        private static bool _eraticMouseThreadRunning = false;
+        private static bool _eraticKeyboardThreadRunning = false;
+        private static bool _randomSoundThreadRunning = true;
+        private static bool _randomPopupThreadRunning = false;
 
         private static Thread eraticMouseThread;
         private static Thread eraticKeyboardThread;
@@ -47,68 +56,140 @@ namespace AprilFools
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            Thread.CurrentThread.Name = "Pranker Main Thread";
             Console.WriteLine("April Fools Prank by: Dougie Fresh");
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
-
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
-            Beep(BeepPitch.Medium, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
 
-            // Check for command line arguments and assign the new values
-            if (args.Length >= 2)
+            //register hotkey(s)
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
+            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
+
+            // Check for command line arguments
+            int startDelay = 0;
+            if (args.Length >= 1)
             {
-                _startupDelaySeconds = Convert.ToInt32(args[0]);
-                _totalDurationSeconds = Convert.ToInt32(args[1]);
+                startDelay = Convert.ToInt32(args[0]);
             }
 
+            //setup delayed start
+            if (startDelay > 0)
+            {
+                _allPrankingEnabled = false;
+                _delayedStartEnabled = true;
+                _delayedStartTime = DateTime.Now.AddSeconds(startDelay);
+            }
+
+            Console.WriteLine("Starting");
+            
             // Create all threads that manipulate all of the inputs and outputs to the system
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
             randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
             randomPopupThread = new Thread(new ThreadStart(RandomPopupThread));
-
-            DateTime future = DateTime.Now.AddSeconds(_startupDelaySeconds);
-            Console.WriteLine("Waiting " + _startupDelaySeconds + " seconds before starting threads");
-            while (future > DateTime.Now)
-            {
-                Thread.Sleep(500);
-            }
-            Console.WriteLine("starting");
-
-
-
             // Start all of the threads
             eraticMouseThread.Start();
             eraticKeyboardThread.Start();
             randomSoundThread.Start();
             randomPopupThread.Start();
 
-            if (_totalDurationSeconds > 0)
+
+            StartMainBackgroundThread();
+        }
+
+        static void StartMainBackgroundThread()
+        {
+            //dont start a new thread, just use the base thread
+            while (_applicationRunning)
             {
-                future = DateTime.Now.AddSeconds(_totalDurationSeconds);
-                while (future > DateTime.Now)
+                //check for delated start
+                if (_delayedStartEnabled && _delayedStartTime <= DateTime.Now)
                 {
-                    Thread.Sleep(500);
+                    _allPrankingEnabled = true;
+                    _delayedStartEnabled = false;
                 }
+                
+                //check for timed events here
+
+
+
+                Thread.Sleep(_mainThreadPollingInterval);
             }
-
-            Console.WriteLine("Terminating all threads");
-
+            
             ExitApplication();
+        }
+
+        static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
+        {
+
+            if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
+            {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Start Pranking");
+                StartPranking();
+            }
+            else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
+            {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
+                StopPranking();
+            }
+            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.F4)
+            {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
+                //stop everything and kill application
+                _applicationRunning = false;
+            }
+            else
+            {
+                //uncaught hotkey
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned");
+            }
+        }
+
+        public static void StartPranking()
+        {
+#if _TESTING
+            if (!_allPrankingEnabled)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+#endif
+
+            _allPrankingEnabled = true;
+        }
+
+        public static void StopPranking()
+        {
+#if _TESTING
+            if (_allPrankingEnabled)
+            {
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            }
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+#endif
+
+            _allPrankingEnabled = false;
         }
 
         public static void ExitApplication()
         {
-            
+
 #if _TESTING
             //MessageBox.Show("Exiting application.","\"The\" App",MessageBoxButtons.OK,MessageBoxIcon.None);
 
-            Beep(BeepPitch.Low, BeepDurration.Shrt);
-            Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
 #endif
 
+            Console.WriteLine("Terminating all threads");
             // Kill all threads and exit application
             eraticMouseThread.Abort();
             eraticKeyboardThread.Abort();
@@ -116,11 +197,6 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
-        #region Generic Functions
-        public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
-        public enum BeepDurration { Shrt = 150, Medium = 250, Long = 500 };
-        public static void Beep(BeepPitch p, BeepDurration d) { Console.Beep((int)p, (int)d); }
-        #endregion
 
         #region Thread Functions
         /// <summary>
@@ -129,26 +205,31 @@ namespace AprilFools
         public static void EraticMouseThread()
         {
             Console.WriteLine("EraticMouseThread Started");
+            Thread.CurrentThread.Name = "EraticMouseThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             int moveX = 0;
             int moveY = 0;
 
-            while (_eraticMouseThreadRunning)
+            while (true)
             {
-                // Console.WriteLine(Cursor.Position.ToString());
-
-                if (_random.Next(100) > 50)
+                if (_allPrankingEnabled && _eraticMouseThreadRunning)
                 {
-                    // Generate the random amount to move the cursor on X and Y
-                    moveX = _random.Next(20+1) - 10;
-                    moveY = _random.Next(20+1) - 10;
+                    // Console.WriteLine(Cursor.Position.ToString());
 
-                    // Change mouse cursor position to new random coordinates
-                    Cursor.Position = new System.Drawing.Point(
-                        Cursor.Position.X + moveX,
-                        Cursor.Position.Y + moveY);
+                    if (GenericsClass._random.Next(100) > 50)
+                    {
+                        // Generate the random amount to move the cursor on X and Y
+                        moveX = GenericsClass._random.Next(20 + 1) - 10;
+                        moveY = GenericsClass._random.Next(20 + 1) - 10;
+
+                        // Change mouse cursor position to new random coordinates
+                        Cursor.Position = new System.Drawing.Point(
+                            Cursor.Position.X + moveX,
+                            Cursor.Position.Y + moveY);
+                    }
                 }
-
                 Thread.Sleep(50);
             }
         }
@@ -159,24 +240,29 @@ namespace AprilFools
         public static void EraticKeyboardThread()
         {
             Console.WriteLine("EraticKeyboardThread Started");
+            Thread.CurrentThread.Name = "EraticKeyboardThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_eraticKeyboardThreadRunning)
+            while (true)
             {
-                if (_random.Next(100) >= 95)
+                if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                 {
-                    // Generate a random capitol letter
-                    char key = (char)(_random.Next(26) + 65);
-
-                    // 50/50 make it lower case
-                    if (_random.Next(2) == 0)
+                    if (GenericsClass._random.Next(100) >= 95)
                     {
-                        key = Char.ToLower(key);
+                        // Generate a random capitol letter
+                        char key = (char)(GenericsClass._random.Next(26) + 65);
+
+                        // 50/50 make it lower case
+                        if (GenericsClass._random.Next(2) == 0)
+                        {
+                            key = Char.ToLower(key);
+                        }
+
+                        SendKeys.SendWait(key.ToString());
                     }
-
-                    SendKeys.SendWait(key.ToString());
                 }
-
-                Thread.Sleep(_random.Next(500));
+                Thread.Sleep(GenericsClass._random.Next(500));
             }
         }
 
@@ -186,16 +272,19 @@ namespace AprilFools
         public static void RandomSoundThread()
         {
             Console.WriteLine("RandomSoundThread Started");
+            Thread.CurrentThread.Name = "RandomSoundThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_randomSoundThreadRunning)
+            while (true)
             {
-                // Determine if we're going to play a sound this time through the loop (20% odds)
-                //if (_random.Next(100) >= 80)
-                bool rndSound = true;
-                if (rndSound)
+                if (_allPrankingEnabled && _randomSoundThreadRunning)
                 {
+                    // Determine if we're going to play a sound this time through the loop (20% odds)
+                    //if (_random.Next(100) >= 80)
+
                     // Randomly select a system sound
-                    int sound = _random.Next(5);
+                    int sound = GenericsClass._random.Next(5);
                     sound = 3;
                     switch (sound)
                     {
@@ -215,13 +304,8 @@ namespace AprilFools
                             SystemSounds.Question.Play();
                             break;
                     }
-                    Thread.Sleep(500);
                 }
-                else
-                {
-                    Console.Beep(400, 1000);
-                    Thread.Sleep(101);
-                }
+                Thread.Sleep(500);
             }
         }
 
@@ -231,6 +315,9 @@ namespace AprilFools
         public static void RandomPopupThread()
         {
             Console.WriteLine("RandomPopupThread Started");
+            Thread.CurrentThread.Name = "RandomPopupThread";
+            Thread.CurrentThread.IsBackground = true;
+            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
             const int popupInterval = 1000 * 60 * 90;//90 minutes
             const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
@@ -242,146 +329,32 @@ namespace AprilFools
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
             //Possibility pos_calc = popup.AddPossibility(1, "Calc");
 
-            while (_randomPopupThreadRunning)
+            while (true)
             {
-                // Every 10 seconds roll the dice and 10% of the time show a dialog
-                if (_random.Next(100) >= (100-oddsOfSeeingAPopupEachInterval))
+                if (_allPrankingEnabled && _randomPopupThreadRunning)
                 {
-                    // Determine which message to show user
-                    if (popup.RandomChoice().ID == pos_chrome.ID)
+                    // Every 10 seconds roll the dice and 10% of the time show a dialog
+                    if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
+                    {
+                        // Determine which message to show user
+                        if (popup.RandomChoice().ID == pos_chrome.ID)
                             MessageBox.Show(
                                "Chrome is dangerously low on resources.",
                                 "Chrome",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Warning);
-                    else if (popup.RandomChoice().ID == pos_mem.ID)
+                        else if (popup.RandomChoice().ID == pos_mem.ID)
                             MessageBox.Show(
                                "Your system is running low on resources",
                                 "Microsoft Windows",
                                 MessageBoxButtons.OK,
                                 MessageBoxIcon.Warning);
+                    }
                 }
-
-                int variance = _random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
+                int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 Thread.Sleep(popupInterval + variance);
             }
         }
         #endregion
-    }
-
-    /// <summary>
-    /// This is for use with the choice class. NOTE: this is intended for use within a since instance of a choice. multiple use can cause issues with both the ID values and offset used in calculations
-    /// </summary>
-    struct Possibility
-    {
-        static int Next_ID;
-
-        public readonly int ID;
-        public string Name;
-        public float Weight;
-        public float Offset;
-        public float UpperBound { get { return Weight + Offset; } }
-
-        public Possibility(float weight, string name)
-        {
-            ID = Next_ID++;
-            Name = name;
-            Weight = weight;
-            Offset = 0;
-        }
-
-        public override string ToString()
-        {
-            return ToStringRange();
-        }
-
-        public string ToStringWeight()
-        {
-            return Name + " - " + Weight;
-        }
-
-        public string ToStringRange()
-        {
-            return Name + ": (" + Offset + " - " + (Weight + Offset) + ")";
-        }
-    }
-
-    class Choice
-    {
-        private List<Possibility> possibilities;
-        public float TotalWeight = 0;
-        public static float LastValue = 0;
-
-        public Choice()
-        {
-            possibilities = new List<Possibility>();
-        }
-
-        public Choice(Possibility pos)
-            : base()
-        {
-            AddPossibility(pos);
-        }
-
-        public Possibility AddPossibility(float weight, string name)
-        {
-            Possibility pos = new Possibility(weight, name);
-            return AddPossibility(pos);
-        }
-
-        public Possibility AddPossibility(Possibility pos)
-        {
-            if (pos.Weight > 0)
-            {
-                pos.Offset = TotalWeight;//offset at end of last choice
-                TotalWeight += pos.Weight;
-                possibilities.Add(pos);
-            }
-            return pos;
-        }
-
-        public Possibility RandomChoice()
-        {
-            float val = (float)(Program._random.NextDouble() * TotalWeight);
-            return GetChoice(val);
-        }
-
-        public Possibility GetChoice(float val)
-        {
-            val = val % TotalWeight;
-            LastValue = val;
-            foreach (Possibility pos in possibilities)
-            {
-                if (val >= pos.Offset && val < pos.UpperBound)
-                {
-                    return pos;
-                }
-            }
-
-            return new Possibility();
-        }
-
-
-        public string ListPossibilities()
-        {
-            string result = "";
-            foreach (Possibility pos in possibilities)
-            {
-                result += pos.ToStringRange() + "\n";
-            }
-
-            return result;
-        }
-
-        public static bool SingleChoice(Possibility pos)
-        {
-            float val = (float)(Program._random.NextDouble() * 1);
-            return val < pos.Weight;
-        }
-
-        public static bool SingleChoice(float percentage, string name)
-        {
-            return SingleChoice(new Possibility(percentage, name));
-        }
     }
 }
