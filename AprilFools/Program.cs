@@ -19,6 +19,7 @@ namespace AprilFools
      * Hotkeys:
      * CTRL+WIN+F2 Gloabl start
      * CTRL+WIN+F4 Gloabl pause
+     * CTRL+Shfit+F4 kill application - non reversable without manual restart
      * 
      * --ideas
      * program wil launch and sit silently 
@@ -33,12 +34,15 @@ namespace AprilFools
     {
         public static int _startupDelaySeconds = 0;
 
+        private static bool _applicationRunning = true;
         private static bool _allPrankingEnabled = true;
 
-        public static bool _eraticMouseThreadRunning = false;
-        public static bool _eraticKeyboardThreadRunning = false;
-        public static bool _randomSoundThreadRunning = true;
-        public static bool _randomPopupThreadRunning = false;
+        private static int _mainThreadPollingInterval = 50;//sleep time for main thread
+
+        private static bool _eraticMouseThreadRunning = false;
+        private static bool _eraticKeyboardThreadRunning = false;
+        private static bool _randomSoundThreadRunning = true;
+        private static bool _randomPopupThreadRunning = false;
 
         private static Thread eraticMouseThread;
         private static Thread eraticKeyboardThread;
@@ -55,13 +59,14 @@ namespace AprilFools
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
-            GenericsClass.Beep(BeepPitch.Medium, Generics.BeepDurration.Shrt);
-            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
 
             //register hotkey(s)
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.F4);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
 
             // Check for command line arguments and assign the new values
@@ -77,7 +82,7 @@ namespace AprilFools
             {
                 Thread.Sleep(500);
             }
-            Console.WriteLine("starting");
+            Console.WriteLine("Starting");
             
             // Create all threads that manipulate all of the inputs and outputs to the system
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
@@ -90,10 +95,21 @@ namespace AprilFools
             randomSoundThread.Start();
             randomPopupThread.Start();
 
-            Console.WriteLine("Terminating all threads");
 
-            Thread.Sleep(5000000);
-            //ExitApplication();
+            StartMainBackgroundThread();
+        }
+
+        static void StartMainBackgroundThread()
+        {
+            //dont start a new thread, just use the base thread
+            while (_applicationRunning)
+            {
+                //check for timed events here
+
+                Thread.Sleep(_mainThreadPollingInterval);
+            }
+            
+            ExitApplication();
         }
 
         static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
@@ -107,6 +123,11 @@ namespace AprilFools
             else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
             {
                 StopPranking();
+            }
+            else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Keys.F4)
+            {
+                //stop everything and kill application
+                _applicationRunning = false;
             }
             else
             {
@@ -149,10 +170,11 @@ namespace AprilFools
 #if _TESTING
             //MessageBox.Show("Exiting application.","\"The\" App",MessageBoxButtons.OK,MessageBoxIcon.None);
 
-            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
-            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
 #endif
 
+            Console.WriteLine("Terminating all threads");
             // Kill all threads and exit application
             eraticMouseThread.Abort();
             eraticKeyboardThread.Abort();
