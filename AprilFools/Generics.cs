@@ -23,7 +23,7 @@ namespace Generics
     {
         public static event EventHandler<HotKeyEventArgs> HotKeyPressed;
 
-        public static int RegisterHotKey(Keys key, KeyModifiers modifiers)
+        public static int RegisterHotKey(KeyModifiers modifiers, Keys key)
         {
             _windowReadyEvent.WaitOne();
             int id = System.Threading.Interlocked.Increment(ref _id);

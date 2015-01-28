@@ -16,6 +16,10 @@ namespace AprilFools
     /*
      * This application will pose as java update application jucheck.exe with app decriptions and icon to match
      * 
+     * Hotkeys:
+     * CTRL+WIN+F2 Gloabl start
+     * CTRL+WIN+F4 Gloabl pause
+     * 
      * --ideas
      * program wil launch and sit silently 
      * make noise every hour
@@ -28,11 +32,12 @@ namespace AprilFools
     public class Pranker
     {
         public static int _startupDelaySeconds = 0;
-        public static int _totalDurationSeconds = 10;
+
+        private static bool _allPrankingEnabled = true;
 
         public static bool _eraticMouseThreadRunning = false;
         public static bool _eraticKeyboardThreadRunning = false;
-        public static bool _randomSoundThreadRunning = false;
+        public static bool _randomSoundThreadRunning = true;
         public static bool _randomPopupThreadRunning = false;
 
         private static Thread eraticMouseThread;
@@ -55,23 +60,16 @@ namespace AprilFools
 #endif
 
             //register hotkey(s)
-            int idA = HotKeyManager.RegisterHotKey(Keys.A, KeyModifiers.Alt);
-            int idS = HotKeyManager.RegisterHotKey(Keys.S, KeyModifiers.Alt);
-            int idD = HotKeyManager.RegisterHotKey(Keys.D, KeyModifiers.Alt);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
 
             // Check for command line arguments and assign the new values
             if (args.Length >= 2)
             {
                 _startupDelaySeconds = Convert.ToInt32(args[0]);
-                _totalDurationSeconds = Convert.ToInt32(args[1]);
             }
 
-            // Create all threads that manipulate all of the inputs and outputs to the system
-            eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
-            eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
-            randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
-            randomPopupThread = new Thread(new ThreadStart(RandomPopupThread));
 
             DateTime future = DateTime.Now.AddSeconds(_startupDelaySeconds);
             Console.WriteLine("Waiting " + _startupDelaySeconds + " seconds before starting threads");
@@ -80,31 +78,69 @@ namespace AprilFools
                 Thread.Sleep(500);
             }
             Console.WriteLine("starting");
-
+            
+            // Create all threads that manipulate all of the inputs and outputs to the system
+            eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
+            eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
+            randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
+            randomPopupThread = new Thread(new ThreadStart(RandomPopupThread));
             // Start all of the threads
             eraticMouseThread.Start();
             eraticKeyboardThread.Start();
             randomSoundThread.Start();
             randomPopupThread.Start();
 
-            if (_totalDurationSeconds > 0)
-            {
-                future = DateTime.Now.AddSeconds(_totalDurationSeconds);
-                while (future > DateTime.Now)
-                {
-                    Thread.Sleep(500);
-                }
-            }
-
             Console.WriteLine("Terminating all threads");
 
-            ExitApplication();
+            Thread.Sleep(5000000);
+            //ExitApplication();
         }
 
         static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
         {
-            Console.WriteLine("Hit me! - " + e);
-            Console.WriteLine("Hit me! - " + e.Key);
+            Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key);
+
+            if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
+            {
+                StartPranking();
+            }
+            else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
+            {
+                StopPranking();
+            }
+            else
+            {
+                //uncaught hotkey
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned");
+            }
+        }
+
+        public static void StartPranking()
+        {
+#if _TESTING
+            if (!_allPrankingEnabled)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+#endif
+
+            _allPrankingEnabled = true;
+        }
+
+        public static void StopPranking()
+        {
+#if _TESTING
+            if (_allPrankingEnabled)
+            {
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            }
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+#endif
+
+            _allPrankingEnabled = false;
         }
 
         public static void ExitApplication()
@@ -139,22 +175,24 @@ namespace AprilFools
             int moveX = 0;
             int moveY = 0;
 
-            while (_eraticMouseThreadRunning)
+            while (true)
             {
-                // Console.WriteLine(Cursor.Position.ToString());
-
-                if (GenericsClass._random.Next(100) > 50)
+                if (_allPrankingEnabled && _eraticMouseThreadRunning)
                 {
-                    // Generate the random amount to move the cursor on X and Y
-                    moveX = GenericsClass._random.Next(20 + 1) - 10;
-                    moveY = GenericsClass._random.Next(20 + 1) - 10;
+                    // Console.WriteLine(Cursor.Position.ToString());
 
-                    // Change mouse cursor position to new random coordinates
-                    Cursor.Position = new System.Drawing.Point(
-                        Cursor.Position.X + moveX,
-                        Cursor.Position.Y + moveY);
+                    if (GenericsClass._random.Next(100) > 50)
+                    {
+                        // Generate the random amount to move the cursor on X and Y
+                        moveX = GenericsClass._random.Next(20 + 1) - 10;
+                        moveY = GenericsClass._random.Next(20 + 1) - 10;
+
+                        // Change mouse cursor position to new random coordinates
+                        Cursor.Position = new System.Drawing.Point(
+                            Cursor.Position.X + moveX,
+                            Cursor.Position.Y + moveY);
+                    }
                 }
-
                 Thread.Sleep(50);
             }
         }
@@ -169,22 +207,24 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_eraticKeyboardThreadRunning)
+            while (true)
             {
-                if (GenericsClass._random.Next(100) >= 95)
+                if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                 {
-                    // Generate a random capitol letter
-                    char key = (char)(GenericsClass._random.Next(26) + 65);
-
-                    // 50/50 make it lower case
-                    if (GenericsClass._random.Next(2) == 0)
+                    if (GenericsClass._random.Next(100) >= 95)
                     {
-                        key = Char.ToLower(key);
+                        // Generate a random capitol letter
+                        char key = (char)(GenericsClass._random.Next(26) + 65);
+
+                        // 50/50 make it lower case
+                        if (GenericsClass._random.Next(2) == 0)
+                        {
+                            key = Char.ToLower(key);
+                        }
+
+                        SendKeys.SendWait(key.ToString());
                     }
-
-                    SendKeys.SendWait(key.ToString());
                 }
-
                 Thread.Sleep(GenericsClass._random.Next(500));
             }
         }
@@ -199,13 +239,13 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_randomSoundThreadRunning)
+            while (true)
             {
-                // Determine if we're going to play a sound this time through the loop (20% odds)
-                //if (_random.Next(100) >= 80)
-                bool rndSound = true;
-                if (rndSound)
+                if (_allPrankingEnabled && _randomSoundThreadRunning)
                 {
+                    // Determine if we're going to play a sound this time through the loop (20% odds)
+                    //if (_random.Next(100) >= 80)
+
                     // Randomly select a system sound
                     int sound = GenericsClass._random.Next(5);
                     sound = 3;
@@ -227,13 +267,8 @@ namespace AprilFools
                             SystemSounds.Question.Play();
                             break;
                     }
-                    Thread.Sleep(500);
                 }
-                else
-                {
-                    Console.Beep(400, 1000);
-                    Thread.Sleep(101);
-                }
+                Thread.Sleep(500);
             }
         }
 
@@ -257,26 +292,28 @@ namespace AprilFools
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
             //Possibility pos_calc = popup.AddPossibility(1, "Calc");
 
-            while (_randomPopupThreadRunning)
+            while (true)
             {
-                // Every 10 seconds roll the dice and 10% of the time show a dialog
-                if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
+                if (_allPrankingEnabled && _randomPopupThreadRunning)
                 {
-                    // Determine which message to show user
-                    if (popup.RandomChoice().ID == pos_chrome.ID)
-                        MessageBox.Show(
-                           "Chrome is dangerously low on resources.",
-                            "Chrome",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
-                    else if (popup.RandomChoice().ID == pos_mem.ID)
-                        MessageBox.Show(
-                           "Your system is running low on resources",
-                            "Microsoft Windows",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Warning);
+                    // Every 10 seconds roll the dice and 10% of the time show a dialog
+                    if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
+                    {
+                        // Determine which message to show user
+                        if (popup.RandomChoice().ID == pos_chrome.ID)
+                            MessageBox.Show(
+                               "Chrome is dangerously low on resources.",
+                                "Chrome",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+                        else if (popup.RandomChoice().ID == pos_mem.ID)
+                            MessageBox.Show(
+                               "Your system is running low on resources",
+                                "Microsoft Windows",
+                                MessageBoxButtons.OK,
+                                MessageBoxIcon.Warning);
+                    }
                 }
-
                 int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 Thread.Sleep(popupInterval + variance);
             }
