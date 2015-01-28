@@ -19,7 +19,7 @@ namespace AprilFools
      * Hotkeys:
      * CTRL+WIN+F2 Gloabl start
      * CTRL+WIN+F4 Gloabl pause
-     * CTRL+Shfit+F4 kill application - non reversable without manual restart
+     * Alt+Shfit+F4 kill application - non reversable without manual restart
      * 
      * --ideas
      * program wil launch and sit silently 
@@ -35,7 +35,7 @@ namespace AprilFools
         public static int _startupDelaySeconds = 0;
 
         private static bool _applicationRunning = true;
-        private static bool _allPrankingEnabled = true;
+        private static bool _allPrankingEnabled = false;
 
         private static int _mainThreadPollingInterval = 50;//sleep time for main thread
 
@@ -66,7 +66,7 @@ namespace AprilFools
             //register hotkey(s)
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
 
             // Check for command line arguments and assign the new values
@@ -114,18 +114,20 @@ namespace AprilFools
 
         static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
         {
-            Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key);
 
             if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
             {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Start Pranking");
                 StartPranking();
             }
             else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
             {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
                 StopPranking();
             }
-            else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && e.Key == Keys.F4)
+            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.F4)
             {
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
                 //stop everything and kill application
                 _applicationRunning = false;
             }
