@@ -20,6 +20,7 @@ namespace AprilFools
      * CTRL+WIN+F2 Gloabl start
      * CTRL+WIN+F4 Gloabl pause
      * Alt+Shfit+F4 kill application - non reversable without manual restart
+     * Alt+Shfit+1 Test Button - only runs in test mode
      * 
      * --ideas
      * program wil launch and sit silently 
@@ -69,6 +70,7 @@ namespace AprilFools
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
             HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.D1);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
 
             // Check for command line arguments
@@ -144,6 +146,15 @@ namespace AprilFools
                 //stop everything and kill application
                 _applicationRunning = false;
             }
+            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D1)
+            {
+#if _TESTING
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key");
+                TestCode();
+#else
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key - disabled without test mode");
+#endif
+            }
             else
             {
                 //uncaught hotkey
@@ -156,10 +167,10 @@ namespace AprilFools
 #if _TESTING
             if (!_allPrankingEnabled)
             {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
             }
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
 #endif
 
             _allPrankingEnabled = true;
@@ -170,10 +181,10 @@ namespace AprilFools
 #if _TESTING
             if (_allPrankingEnabled)
             {
-                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
-                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
             }
-            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
 #endif
 
             _allPrankingEnabled = false;
@@ -197,6 +208,45 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
+        public static void TestCode()
+        {
+            //BombBeepCountdown();
+        }
+
+        #region Action functions
+        /// <summary>
+        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
+        /// </summary>
+        public static void BombBeepCountdown()
+        {
+            int pause = 2000;
+            while (pause > 400)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= (int)(pause * 0.15));
+            }
+            while (pause >= 25)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= 25);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+        }
+        #endregion
 
         #region Thread Functions
         /// <summary>

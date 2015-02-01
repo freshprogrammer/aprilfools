@@ -7,3 +7,5 @@ Starts silently and runs in background until activated by delayed start or by ho
 - CTRL+WIN+F2 Global start
 - CTRL+WIN+F4 Global pause
 - Alt+Shfit+F4 Kill application - non reversible without manual restart
+
+- Alt+Shfit+1 Test Button - only runs in test mode

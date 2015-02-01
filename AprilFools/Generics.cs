@@ -11,7 +11,10 @@ namespace Generics
     {
         public static Random _random = new Random();
 
-        public static void Beep(BeepPitch p, BeepDurration d) { Console.Beep((int)p, (int)d); }
+        public static void Beep(BeepPitch p, BeepDurration d)   { Beep((int)p, (int)d); }
+        public static void Beep(BeepPitch p, int d)             { Beep((int)p, d); }
+        public static void Beep(int p, BeepDurration d)         { Beep(p, (int)d); }
+        public static void Beep(int p, int d)                   { Console.Beep(p, d); }
     }
     #endregion
 
@@ -143,7 +146,7 @@ namespace Generics
 
     #region Beeps
     public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
-    public enum BeepDurration { Shrt = 150, Medium = 250, Long = 500 };
+    public enum BeepDurration { Short = 150, Medium = 250, Long = 500 };
     #endregion
 
     #region Choices
