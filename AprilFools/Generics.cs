@@ -266,7 +266,7 @@ namespace Generics
     }
     #endregion
 
-#region Volume Control
+    #region Volume Control
     /// <summary>
     /// This controls the volume of this application but not master volume in windows vista, 7, 8, ?
     /// </summary>
@@ -304,6 +304,91 @@ namespace Generics
             uint NewVolumeAllChannels = (((uint)NewVolume & 0x0000ffff) | ((uint)NewVolume << 16));
             // Set the volume
             waveOutSetVolume(IntPtr.Zero, NewVolumeAllChannels);
+        }
+    }
+#endregion
+
+    #region EventScheduler
+    public class EventScheduler<T>
+    {
+        private List<ScheduledEvent<T>> schedule;
+
+        public ScheduledEvent<T> NextEvent
+        {
+            get { if (schedule.Count > 0)return schedule[0]; else return null; }
+        }
+
+        public EventScheduler()
+        {
+            schedule = new List<ScheduledEvent<T>>(10);
+        }
+
+        public void AddEvent(ScheduledEvent<T> e)
+        {
+            schedule.Add(e);
+            schedule.Sort();
+        }
+
+        /// <summary>
+        /// Create a new Event to occur in X miliseconds
+        /// </summary>
+        /// <param name="evnt">Event to occur</param>
+        /// <param name="deley">Delay in miliseconds from now</param>
+        public void AddEvent(T evnt, int deley)
+        {
+            ScheduledEvent<T> newEvent = new ScheduledEvent<T>(DateTime.Now.AddMilliseconds(deley), evnt);
+            AddEvent(newEvent);
+        }
+
+        public void ClearSchedule()
+        {
+            schedule.Clear();
+        }
+
+        public void RemoveNextEvent()
+        {
+            schedule.RemoveAt(0);
+        }
+    }
+
+    /// <summary>
+    /// Data Structure for an Event at a specific time
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class ScheduledEvent<T> : IComparable<ScheduledEvent<T>>
+    {//this is a class so I can easily adjust the time and return null  if its not found
+        public DateTime Time;
+        public T Event;
+
+        public ScheduledEvent(DateTime t, T e)
+        {
+            Time = t;
+            Event = e;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            ScheduledEvent<T> objAsScheduledEvent = obj as ScheduledEvent<T>;
+            if (objAsScheduledEvent == null) return false;
+            else return Equals(objAsScheduledEvent);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();//this is bogus
+        }
+
+        public int CompareTo(ScheduledEvent<T> comparePart)
+        {
+            return this.Time.CompareTo(comparePart.Time);
+        }
+
+        public override string ToString()
+        {
+            //update to show time if today, and time+date if not
+            //string timeString = 
+            return "ScheduledEvent(" + Event + " at " + Time + ")";
         }
     }
 #endregion
