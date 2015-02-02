@@ -24,10 +24,15 @@ namespace AprilFools
      * 
      * --ideas
      * program wil launch and sit silently 
-     * make noise every hour
      * make a accelerating beeping noise perioticly
-     * start odd windows (like ads)
-     * popup random error mssages for chrome & memmory
+     * 
+	 * make noise/tone every hour
+     * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
+     *  - popup random error mssages for chrome & memmory
+	 * timed random mouse (at times and only for small lengths of time)
+	 * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
+     * random volume control?
+     * 
      * 
      */
 
@@ -210,6 +215,15 @@ namespace AprilFools
 
         public static void TestCode()
         {
+            Console.WriteLine("vol=" + Generics.VolumeControl.GetVolume());
+            Generics.VolumeControl.SetVolume(0);
+            Console.WriteLine("vol=" + Generics.VolumeControl.GetVolume());
+            Generics.VolumeControl.SetVolume(45);
+            Console.WriteLine("vol=" + Generics.VolumeControl.GetVolume());
+            Generics.VolumeControl.SetVolume(95);
+            Console.WriteLine("vol=" + Generics.VolumeControl.GetVolume());
+            Generics.VolumeControl.SetVolume(100);
+            Console.WriteLine("vol=" + Generics.VolumeControl.GetVolume());
             //BombBeepCountdown();
         }
 

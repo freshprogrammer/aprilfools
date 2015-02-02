@@ -18,8 +18,7 @@ namespace Generics
     }
     #endregion
 
-
-    #region keyboard testing
+    #region keyboard hooks
     //used implementation from here http://stackoverflow.com/questions/3654787/global-hotkey-in-console-application
 
     public static class HotKeyManager
@@ -266,4 +265,46 @@ namespace Generics
         }
     }
     #endregion
+
+#region Volume Control
+    /// <summary>
+    /// This controls the volume of this application but not master volume in windows vista, 7, 8, ?
+    /// </summary>
+    public class VolumeControl
+    {
+        [DllImport("winmm.dll")]
+        public static extern int waveOutGetVolume(IntPtr hwo, out uint dwVolume);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutSetVolume(IntPtr hwo, uint dwVolume);
+
+        /// <summary>
+        /// Returns the current volume percentage for this application (0-100)
+        /// </summary>
+        /// <returns></returns>
+        public static float GetVolume()
+        {
+            uint CurrVol = 0;
+            // At this point, CurrVol gets assigned the volume
+            waveOutGetVolume(IntPtr.Zero, out CurrVol);
+            // Calculate the volume
+            ushort CalcVol = (ushort)(CurrVol & 0x0000ffff);
+            return 100f * CalcVol / ushort.MaxValue;
+        }
+
+        /// <summary>
+        /// Sets the volume for this application
+        /// </summary>
+        /// <param name="vol">desired application volume from 0-100</param>
+        public static void SetVolume(float vol)
+        {
+            // Calculate the volume that's being set
+            int NewVolume = (int)((vol/100)*ushort.MaxValue);
+            // Set the same volume for both the left and the right channels
+            uint NewVolumeAllChannels = (((uint)NewVolume & 0x0000ffff) | ((uint)NewVolume << 16));
+            // Set the volume
+            waveOutSetVolume(IntPtr.Zero, NewVolumeAllChannels);
+        }
+    }
+#endregion
 }
