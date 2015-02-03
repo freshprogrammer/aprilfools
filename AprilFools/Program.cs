@@ -218,7 +218,7 @@ namespace AprilFools
         public static void TestCode()
         {
             //BombBeepCountdown();
-            schedule.AddEvent(PrankerEvent.RunMouseThread20s, 0);
+            schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
         }
 
         #region Thread Functions
@@ -432,17 +432,47 @@ namespace AprilFools
                 case PrankerEvent.KillApplication:
                     _applicationRunning = false;
                     break;
-                case PrankerEvent.StartMouseThread:
+                case PrankerEvent.StartEraticMouseThread:
                     _eraticMouseThreadRunning = true;
                     break;
-                case PrankerEvent.StopMouseThread:
+                case PrankerEvent.StopEraticMouseThread:
                     _eraticMouseThreadRunning = false;
+                    break;
+                case PrankerEvent.StartEraticKeyboardThread:
+                    _eraticKeyboardThreadRunning = true;
+                    break;
+                case PrankerEvent.StopEraticKeyboardThread:
+                    _eraticKeyboardThreadRunning = false;
+                    break;
+                case PrankerEvent.StartRandomSoundThread:
+                    _randomSoundThreadRunning = true;
+                    break;
+                case PrankerEvent.StopRandomSoundThread:
+                    _randomSoundThreadRunning = false;
+                    break;
+                case PrankerEvent.StartRandomPopupThread:
+                    _randomPopupThreadRunning = true;
+                    break;
+                case PrankerEvent.StopRandomPopupThread:
+                    _randomPopupThreadRunning = false;
                     break;
 
 
-                case PrankerEvent.RunMouseThread20s:
-                    schedule.AddEvent(PrankerEvent.StartMouseThread, 0);
-                    schedule.AddEvent(PrankerEvent.StopMouseThread, 20*1000);
+                case PrankerEvent.RunEraticMouseThread20s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
+                    break;
+                case PrankerEvent.RunEraticKeyboardThread20s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboardThread, 20 * 1000);
+                    break;
+                case PrankerEvent.RunRandomSoundThread20s:
+                    _randomSoundThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
+                    break;
+                case PrankerEvent.RunRandomPopupThread20s:
+                    _randomPopupThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopRandomPopupThread, 20 * 1000);
                     break;
                 default:
                     handled = false;
@@ -461,12 +491,26 @@ namespace AprilFools
     /// </summary>
     public enum PrankerEvent
     {
-        PlayBombBeeping,
-        
         //mouse events
-        StartMouseThread,
-        StopMouseThread,
-        RunMouseThread20s,
+        StartEraticMouseThread,
+        StopEraticMouseThread,
+        RunEraticMouseThread20s,
+
+        //keyboard events
+        StartEraticKeyboardThread,
+        StopEraticKeyboardThread,
+        RunEraticKeyboardThread20s,
+
+        //Sound events
+        PlayBombBeeping,
+        StartRandomSoundThread,
+        StopRandomSoundThread,
+        RunRandomSoundThread20s,
+
+        //popup events
+        StartRandomPopupThread,
+        StopRandomPopupThread,
+        RunRandomPopupThread20s,
         
         StartApplication,
         PauseApplication,
