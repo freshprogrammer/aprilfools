@@ -88,9 +88,6 @@ namespace AprilFools
 
             schedule = new EventScheduler<PrankerEvent>();
 
-            //temp - limit life to 1 min
-            schedule.AddEvent(PrankerEvent.KillApplication, 60 * 1000);
-
             //setup delayed start
             if (startDelay > 0)
             {
@@ -459,7 +456,7 @@ namespace AprilFools
 
 
                 case PrankerEvent.RunEraticMouseThread20s:
-                    _eraticKeyboardThreadRunning = true;
+                    _eraticMouseThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
                     break;
                 case PrankerEvent.RunEraticKeyboardThread20s:
