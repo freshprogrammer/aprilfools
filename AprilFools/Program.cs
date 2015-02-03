@@ -21,6 +21,7 @@ namespace AprilFools
      * CTRL+WIN+F4 Gloabl pause
      * Alt+Shfit+F4 kill application - non reversable without manual restart
      * Alt+Shfit+1 Test Button - only runs in test mode
+     * Alt+Shfit+2 Test Button - only runs in test mode
      * 
      * --ideas
      * program wil launch and sit silently 
@@ -50,6 +51,13 @@ namespace AprilFools
         private static bool _randomSoundThreadRunning = false;
         private static bool _randomPopupThreadRunning = false;
 
+        //Key mapping using assosiative arrays / dictionary
+        public static List<Keys> keysToTrack = null;
+        public static Dictionary<int, Keys> hotkeyIDs = null;
+        public static Dictionary<Keys, string> keyMappings = null;
+        /// <summary>Number of Keys to Map. decriement each map untill 0 when key mapping is disabled. If this is -1 there is no limit</summary>
+        public static int keyMapCounter = 0;
+
         private static EventScheduler<PrankerEvent> schedule;
 
         private static Thread eraticMouseThread;
@@ -71,7 +79,6 @@ namespace AprilFools
             GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
             GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
-
             // Check for command line arguments
             int startDelay = 0;
             if (args.Length >= 1)
@@ -84,6 +91,7 @@ namespace AprilFools
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
             HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
             HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.D1);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.D2);
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
 
             schedule = new EventScheduler<PrankerEvent>();
@@ -153,19 +161,30 @@ namespace AprilFools
             else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D1)
             {
 #if _TESTING
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key");
-                TestCode();
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 1");
+                TestCode1();
 #else
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key - disabled without test mode");
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 1 - disabled without test mode");
+#endif
+            }
+            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D2)
+            {
+#if _TESTING
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2");
+                TestCode2();
+#else
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2 - disabled without test mode");
 #endif
             }
             else
             {
+                //uncaught so far - test for all key listeners
+                MapKey(e);
                 //uncaught hotkey
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned");
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
             }
         }
-
+        
         public static void StartPranking()
         {
 #if _TESTING
@@ -212,11 +231,138 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
-        public static void TestCode()
+        public static void TestCode1()
         {
-            //BombBeepCountdown();
-            schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
+            //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
+            EnableKeyMapping();
         }
+
+        public static void TestCode2()
+        {
+            DisableKeyMapping();
+        }
+
+        #region Key Mapping
+        //using assosiative arrays / dictionary
+        private static void DefineKeyMappings()
+        {
+            hotkeyIDs = new Dictionary<int, Keys>();
+            keyMappings = new Dictionary<Keys, string>();
+
+            //These keys will be registered as hoykeys
+            keysToTrack = new List<Keys>(36);
+            #region mapped Key list
+            keysToTrack.Add(Keys.A); keyMappings.Add(Keys.A, "s");
+            keysToTrack.Add(Keys.B); keyMappings.Add(Keys.B, "b");
+            keysToTrack.Add(Keys.C); keyMappings.Add(Keys.C, "c");
+            keysToTrack.Add(Keys.D); keyMappings.Add(Keys.D, "d");
+            keysToTrack.Add(Keys.E); keyMappings.Add(Keys.E, "e");
+            keysToTrack.Add(Keys.F); keyMappings.Add(Keys.F, "f");
+            keysToTrack.Add(Keys.G); keyMappings.Add(Keys.G, "g");
+            keysToTrack.Add(Keys.H); keyMappings.Add(Keys.H, "h");
+            keysToTrack.Add(Keys.I); keyMappings.Add(Keys.I, "i");
+            keysToTrack.Add(Keys.J); keyMappings.Add(Keys.J, "j");
+            keysToTrack.Add(Keys.K); keyMappings.Add(Keys.K, "k");
+            keysToTrack.Add(Keys.L); keyMappings.Add(Keys.L, "l");
+            keysToTrack.Add(Keys.M); keyMappings.Add(Keys.M, "m");
+            keysToTrack.Add(Keys.N); keyMappings.Add(Keys.N, "n");
+            keysToTrack.Add(Keys.O); keyMappings.Add(Keys.O, "o");
+            keysToTrack.Add(Keys.P); keyMappings.Add(Keys.P, "p");
+            keysToTrack.Add(Keys.Q); keyMappings.Add(Keys.Q, "q");
+            keysToTrack.Add(Keys.R); keyMappings.Add(Keys.R, "r");
+            keysToTrack.Add(Keys.S); keyMappings.Add(Keys.S, "a");
+            keysToTrack.Add(Keys.T); keyMappings.Add(Keys.T, "t");
+            keysToTrack.Add(Keys.U); keyMappings.Add(Keys.U, "u");
+            keysToTrack.Add(Keys.V); keyMappings.Add(Keys.V, "v");
+            keysToTrack.Add(Keys.W); keyMappings.Add(Keys.W, "w");
+            keysToTrack.Add(Keys.X); keyMappings.Add(Keys.X, "x");
+            keysToTrack.Add(Keys.Y); keyMappings.Add(Keys.Y, "y");
+            keysToTrack.Add(Keys.Z); keyMappings.Add(Keys.Z, "z");
+            keysToTrack.Add(Keys.D0); keyMappings.Add(Keys.D0, "-");//shifted 1 over
+            keysToTrack.Add(Keys.D1); keyMappings.Add(Keys.D1, "2");
+            keysToTrack.Add(Keys.D2); keyMappings.Add(Keys.D2, "3");
+            keysToTrack.Add(Keys.D3); keyMappings.Add(Keys.D3, "4");
+            keysToTrack.Add(Keys.D4); keyMappings.Add(Keys.D4, "5");
+            keysToTrack.Add(Keys.D5); keyMappings.Add(Keys.D5, "6");
+            keysToTrack.Add(Keys.D6); keyMappings.Add(Keys.D6, "7");
+            keysToTrack.Add(Keys.D7); keyMappings.Add(Keys.D7, "8");
+            keysToTrack.Add(Keys.D8); keyMappings.Add(Keys.D8, "9");
+            keysToTrack.Add(Keys.D9); keyMappings.Add(Keys.D9, "0");
+            #endregion
+        }
+
+        public static void RegisterAllKeyMappings()
+        {
+            DefineKeyMappings();
+
+            int id;
+            foreach (Keys k in keysToTrack)
+            {
+                id = HotKeyManager.RegisterHotKey(0, k);
+                hotkeyIDs[id] = k;
+            }
+        }
+
+        public static void UnregisterAllKeyMappings()
+        {
+            foreach (KeyValuePair<int, Keys> pair in hotkeyIDs)
+            {
+                // do something with entry.Value or entry.Key
+                HotKeyManager.UnregisterHotKey(pair.Key);
+            }
+
+            hotkeyIDs = null;
+            keyMappings = null;
+        }
+
+        public static bool MapKey(HotKeyEventArgs e)
+        {
+            bool mapped = false;
+            
+            if(e.Modifiers!=0)
+                return mapped;
+
+            Keys pressedKey;
+            if (hotkeyIDs.TryGetValue(e.ID,out pressedKey))
+            {
+                //map this key
+                string output = keyMappings[pressedKey];
+                //super ugly hack by disabling all mapping just to redo it a line latter but it works - necisarry to prevent call stack loop
+                UnregisterAllKeyMappings();
+                SendKeys.SendWait(output);
+                RegisterAllKeyMappings();
+
+                if (keyMapCounter != -1)
+                {
+                    keyMapCounter--;
+                    if (keyMapCounter == 0)
+                        DisableKeyMapping();
+                }
+            }
+            return mapped;
+        }
+
+        public static void EnableKeyMapping(int count=-1)
+        {
+            if (count < -1) count = -1;
+            else if (count == 0) { DisableKeyMapping(); return; }
+
+            //new setting is on - check if already on
+            if(keyMapCounter!=-1)
+            {
+                //enable hotkeys for mapping
+                RegisterAllKeyMappings();
+            }
+            keyMapCounter = count;
+        }
+
+        public static void DisableKeyMapping()
+        {
+            keyMapCounter = 0;
+            UnregisterAllKeyMappings();
+            GC.Collect();
+        }
+        #endregion
 
         #region Thread Functions
         /// <summary>

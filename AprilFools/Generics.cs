@@ -86,7 +86,7 @@ namespace Generics
             {
                 if (m.Msg == WM_HOTKEY)
                 {
-                    HotKeyEventArgs e = new HotKeyEventArgs(m.LParam);
+                    HotKeyEventArgs e = new HotKeyEventArgs(m.LParam, m.WParam);
                     HotKeyManager.OnHotKeyPressed(e);
                 }
 
@@ -116,18 +116,21 @@ namespace Generics
     {
         public readonly Keys Key;
         public readonly KeyModifiers Modifiers;
+        public readonly int ID;
 
         public HotKeyEventArgs(Keys key, KeyModifiers modifiers)
         {
             this.Key = key;
             this.Modifiers = modifiers;
+            this.ID = -1;
         }
 
-        public HotKeyEventArgs(IntPtr hotKeyParam)
+        public HotKeyEventArgs(IntPtr hotKeyParam, IntPtr wParam)
         {
             uint param = (uint)hotKeyParam.ToInt64();
             Key = (Keys)((param & 0xffff0000) >> 16);
             Modifiers = (KeyModifiers)(param & 0x0000ffff);
+            this.ID = (int)wParam;
         }
     }
 
