@@ -393,11 +393,6 @@ namespace Generics
             AddEvent(newEvent);
         }
 
-        public void ClearSchedule()
-        {
-            schedule.Clear();
-        }
-
         public void RemoveNextEvent()
         {
             schedule.RemoveAt(0);
