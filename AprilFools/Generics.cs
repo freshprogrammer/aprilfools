@@ -15,6 +15,39 @@ namespace Generics
         public static void Beep(BeepPitch p, int d)             { Beep((int)p, d); }
         public static void Beep(int p, BeepDurration d)         { Beep(p, (int)d); }
         public static void Beep(int p, int d)                   { Console.Beep(p, d); }
+
+        /// <summary>
+        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
+        /// </summary>
+        public static void BombBeepCountdown()
+        {
+            int pause = 2000;
+            while (pause > 400)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= (int)(pause * 0.15));
+            }
+            while (pause >= 25)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= 25);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+        }
     }
     #endregion
 
@@ -332,6 +365,23 @@ namespace Generics
             schedule.Sort();
         }
 
+        public void RemoveEventsByType(T t)
+        {
+            int xx = 0;
+            while (xx < schedule.Count)
+            {
+                if (schedule[xx].Event.Equals(t))
+                    schedule.RemoveAt(xx);
+                else
+                    xx++;
+            }
+        }
+
+        public void ClearSchedule()
+        {
+            schedule.Clear();
+        }
+
         /// <summary>
         /// Create a new Event to occur in X miliseconds
         /// </summary>
@@ -341,11 +391,6 @@ namespace Generics
         {
             ScheduledEvent<T> newEvent = new ScheduledEvent<T>(DateTime.Now.AddMilliseconds(deley), evnt);
             AddEvent(newEvent);
-        }
-
-        public void ClearSchedule()
-        {
-            schedule.Clear();
         }
 
         public void RemoveNextEvent()

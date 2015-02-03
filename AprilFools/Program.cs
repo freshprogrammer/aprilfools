@@ -24,17 +24,17 @@ namespace AprilFools
      * Alt+Shfit+2 Test Button - only runs in test mode
      * 
      * --ideas
-     * program wil launch and sit silently 
-     * make a accelerating beeping noise perioticly
-     * 
-	 * make noise/tone every hour
+     * make noise/tone every hour
      * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
      *  - popup random error mssages for chrome & memmory
-	 * timed random mouse (at times and only for small lengths of time)
-	 * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
-     * Add some narrow wander AI to mouse movement - seperate proc
+	 * Add some narrow wander AI to mouse movement - seperate proc
      * 
-     * 
+     * --done
+     * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
+     * program wil launch and sit silently 
+     * make a accelerating beeping noise perioticly
+     * timed random mouse (at times and only for small lengths of time)
+	 * 
      */
 
     public class Pranker
@@ -115,6 +115,7 @@ namespace AprilFools
             randomSoundThread.Start();
             randomPopupThread.Start();
 
+            CreateTodaysScheduel();
 
             MainBackgroundThread();
         }
@@ -238,6 +239,14 @@ namespace AprilFools
         public static void TestCode2()
         {
             DisableKeyMapping();
+        }
+
+        /// <summary>
+        /// This funtion will setup which events will occur in the next 12 hours, then call its self to setup the next 12.
+        /// </summary>
+        public static void CreateTodaysScheduel()
+        {
+
         }
 
         #region Key Mapping
@@ -527,40 +536,6 @@ namespace AprilFools
         }
         #endregion
 
-        #region Action functions
-        /// <summary>
-        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
-        /// </summary>
-        public static void BombBeepCountdown()
-        {
-            int pause = 2000;
-            while (pause > 400)
-            {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-                Thread.Sleep(pause -= (int)(pause * 0.15));
-            }
-            while (pause >= 25)
-            {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-                Thread.Sleep(pause -= 25);
-            }
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-
-            GenericsClass.Beep(BeepPitch.High, 100);
-            GenericsClass.Beep(BeepPitch.High, 100);
-            GenericsClass.Beep(BeepPitch.High, 100);
-
-            GenericsClass.Beep(BeepPitch.High, 50);
-            GenericsClass.Beep(BeepPitch.High, 50);
-            GenericsClass.Beep(BeepPitch.High, 50);
-        }
-
         public static void ProcessEvent(PrankerEvent e)
         {
             bool handled = true;
@@ -581,11 +556,19 @@ namespace AprilFools
                 case PrankerEvent.StopEraticMouseThread:
                     _eraticMouseThreadRunning = false;
                     break;
+                case PrankerEvent.RunEraticMouseThread20s:
+                    _eraticMouseThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
+                    break;
                 case PrankerEvent.StartEraticKeyboardThread:
                     _eraticKeyboardThreadRunning = true;
                     break;
                 case PrankerEvent.StopEraticKeyboardThread:
                     _eraticKeyboardThreadRunning = false;
+                    break;
+                case PrankerEvent.RunEraticKeyboardThread20s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboardThread, 20 * 1000);
                     break;
                 case PrankerEvent.StartRandomSoundThread:
                     _randomSoundThreadRunning = true;
@@ -593,29 +576,31 @@ namespace AprilFools
                 case PrankerEvent.StopRandomSoundThread:
                     _randomSoundThreadRunning = false;
                     break;
+                case PrankerEvent.RunRandomSoundThread20s:
+                    _randomSoundThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
+                    break;
                 case PrankerEvent.StartRandomPopupThread:
                     _randomPopupThreadRunning = true;
                     break;
                 case PrankerEvent.StopRandomPopupThread:
                     _randomPopupThreadRunning = false;
                     break;
-
-
-                case PrankerEvent.RunEraticMouseThread20s:
-                    _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
-                    break;
-                case PrankerEvent.RunEraticKeyboardThread20s:
-                    _eraticKeyboardThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticKeyboardThread, 20 * 1000);
-                    break;
-                case PrankerEvent.RunRandomSoundThread20s:
-                    _randomSoundThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
-                    break;
                 case PrankerEvent.RunRandomPopupThread20s:
                     _randomPopupThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopRandomPopupThread, 20 * 1000);
+                    break;
+                case PrankerEvent.StartKeyboardMapping:
+                    EnableKeyMapping();
+                    break;
+                case PrankerEvent.StopKeyboardMapping:
+                    DisableKeyMapping();
+                    break;
+                case PrankerEvent.RunKeyboardMapping5:
+                    EnableKeyMapping(5);
+                    break;
+                case PrankerEvent.RunKeyboardMapping10:
+                    EnableKeyMapping(10);
                     break;
                 default:
                     handled = false;
@@ -626,7 +611,6 @@ namespace AprilFools
             else
                 Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e + " - NOT HANDLED");
         }
-        #endregion
     }
 
     /// <summary>
@@ -643,6 +627,10 @@ namespace AprilFools
         StartEraticKeyboardThread,
         StopEraticKeyboardThread,
         RunEraticKeyboardThread20s,
+        StartKeyboardMapping,
+        StopKeyboardMapping,
+        RunKeyboardMapping5,
+        RunKeyboardMapping10,
 
         //Sound events
         PlayBombBeeping,
