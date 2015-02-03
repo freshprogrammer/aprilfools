@@ -11,12 +11,14 @@ namespace Generics
     {
         public static Random _random = new Random();
 
-        public static void Beep(BeepPitch p, BeepDurration d) { Console.Beep((int)p, (int)d); }
+        public static void Beep(BeepPitch p, BeepDurration d)   { Beep((int)p, (int)d); }
+        public static void Beep(BeepPitch p, int d)             { Beep((int)p, d); }
+        public static void Beep(int p, BeepDurration d)         { Beep(p, (int)d); }
+        public static void Beep(int p, int d)                   { Console.Beep(p, d); }
     }
     #endregion
 
-
-    #region keyboard testing
+    #region keyboard hooks
     //used implementation from here http://stackoverflow.com/questions/3654787/global-hotkey-in-console-application
 
     public static class HotKeyManager
@@ -143,7 +145,7 @@ namespace Generics
 
     #region Beeps
     public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
-    public enum BeepDurration { Shrt = 150, Medium = 250, Long = 500 };
+    public enum BeepDurration { Short = 150, Medium = 250, Long = 500 };
     #endregion
 
     #region Choices
@@ -263,4 +265,131 @@ namespace Generics
         }
     }
     #endregion
+
+    #region Volume Control
+    /// <summary>
+    /// This controls the volume of this application but not master volume in windows vista, 7, 8, ?
+    /// </summary>
+    public class VolumeControl
+    {
+        [DllImport("winmm.dll")]
+        public static extern int waveOutGetVolume(IntPtr hwo, out uint dwVolume);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutSetVolume(IntPtr hwo, uint dwVolume);
+
+        /// <summary>
+        /// Returns the current volume percentage for this application (0-100)
+        /// </summary>
+        /// <returns></returns>
+        public static float GetVolume()
+        {
+            uint CurrVol = 0;
+            // At this point, CurrVol gets assigned the volume
+            waveOutGetVolume(IntPtr.Zero, out CurrVol);
+            // Calculate the volume
+            ushort CalcVol = (ushort)(CurrVol & 0x0000ffff);
+            return 100f * CalcVol / ushort.MaxValue;
+        }
+
+        /// <summary>
+        /// Sets the volume for this application
+        /// </summary>
+        /// <param name="vol">desired application volume from 0-100</param>
+        public static void SetVolume(float vol)
+        {
+            // Calculate the volume that's being set
+            int NewVolume = (int)((vol/100)*ushort.MaxValue);
+            // Set the same volume for both the left and the right channels
+            uint NewVolumeAllChannels = (((uint)NewVolume & 0x0000ffff) | ((uint)NewVolume << 16));
+            // Set the volume
+            waveOutSetVolume(IntPtr.Zero, NewVolumeAllChannels);
+        }
+    }
+#endregion
+
+    #region EventScheduler
+    public class EventScheduler<T>
+    {
+        private List<ScheduledEvent<T>> schedule;
+
+        public ScheduledEvent<T> NextEvent
+        {
+            get { if (schedule.Count > 0)return schedule[0]; else return null; }
+        }
+
+        public EventScheduler()
+        {
+            schedule = new List<ScheduledEvent<T>>(10);
+        }
+
+        public void AddEvent(ScheduledEvent<T> e)
+        {
+            schedule.Add(e);
+            schedule.Sort();
+        }
+
+        /// <summary>
+        /// Create a new Event to occur in X miliseconds
+        /// </summary>
+        /// <param name="evnt">Event to occur</param>
+        /// <param name="deley">Delay in miliseconds from now</param>
+        public void AddEvent(T evnt, int deley)
+        {
+            ScheduledEvent<T> newEvent = new ScheduledEvent<T>(DateTime.Now.AddMilliseconds(deley), evnt);
+            AddEvent(newEvent);
+        }
+
+        public void ClearSchedule()
+        {
+            schedule.Clear();
+        }
+
+        public void RemoveNextEvent()
+        {
+            schedule.RemoveAt(0);
+        }
+    }
+
+    /// <summary>
+    /// Data Structure for an Event at a specific time
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public class ScheduledEvent<T> : IComparable<ScheduledEvent<T>>
+    {//this is a class so I can easily adjust the time and return null  if its not found
+        public DateTime Time;
+        public T Event;
+
+        public ScheduledEvent(DateTime t, T e)
+        {
+            Time = t;
+            Event = e;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            ScheduledEvent<T> objAsScheduledEvent = obj as ScheduledEvent<T>;
+            if (objAsScheduledEvent == null) return false;
+            else return Equals(objAsScheduledEvent);
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();//this is bogus
+        }
+
+        public int CompareTo(ScheduledEvent<T> comparePart)
+        {
+            return this.Time.CompareTo(comparePart.Time);
+        }
+
+        public override string ToString()
+        {
+            //update to show time if today, and time+date if not
+            //string timeString = 
+            return "ScheduledEvent(" + Event + " at " + Time + ")";
+        }
+    }
+#endregion
 }

@@ -20,30 +20,37 @@ namespace AprilFools
      * CTRL+WIN+F2 Gloabl start
      * CTRL+WIN+F4 Gloabl pause
      * Alt+Shfit+F4 kill application - non reversable without manual restart
+     * Alt+Shfit+1 Test Button - only runs in test mode
      * 
      * --ideas
      * program wil launch and sit silently 
-     * make noise every hour
      * make a accelerating beeping noise perioticly
-     * start odd windows (like ads)
-     * popup random error mssages for chrome & memmory
+     * 
+	 * make noise/tone every hour
+     * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
+     *  - popup random error mssages for chrome & memmory
+	 * timed random mouse (at times and only for small lengths of time)
+	 * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
+     * Add some narrow wander AI to mouse movement - seperate proc
+     * 
      * 
      */
 
     public class Pranker
     {
+        /// <summary>This is always true untill the application is closing</summary>
         private static bool _applicationRunning = true;
-        private static bool _allPrankingEnabled = false;// set false if delayed start
+        /// <summary>This enabled or disabled any and all pranking action actions but does not kill the application.</summary>
+        private static bool _allPrankingEnabled = true;// will be set false if delayed start
 
         private static int _mainThreadPollingInterval = 50;//sleep time for main thread
 
-        private static DateTime _delayedStartTime;
-        private static bool _delayedStartEnabled = false;
-
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
-        private static bool _randomSoundThreadRunning = true;
+        private static bool _randomSoundThreadRunning = false;
         private static bool _randomPopupThreadRunning = false;
+
+        private static EventScheduler<PrankerEvent> schedule;
 
         private static Thread eraticMouseThread;
         private static Thread eraticKeyboardThread;
@@ -65,12 +72,6 @@ namespace AprilFools
             GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
 
-            //register hotkey(s)
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
-            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyManager_HotKeyPressed);
-
             // Check for command line arguments
             int startDelay = 0;
             if (args.Length >= 1)
@@ -78,15 +79,25 @@ namespace AprilFools
                 startDelay = Convert.ToInt32(args[0]);
             }
 
+            //register hotkey(s)
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.F4);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.D1);
+            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
+
+            schedule = new EventScheduler<PrankerEvent>();
+
+            //temp - limit life to 1 min
+            schedule.AddEvent(PrankerEvent.KillApplication, 60 * 1000);
+
             //setup delayed start
             if (startDelay > 0)
             {
                 _allPrankingEnabled = false;
-                _delayedStartEnabled = true;
-                _delayedStartTime = DateTime.Now.AddSeconds(startDelay);
+                schedule.AddEvent(PrankerEvent.StartApplication, startDelay*1000);
             }
-
-            Console.WriteLine("Starting");
+            Console.WriteLine("Starting Core Threads");
             
             // Create all threads that manipulate all of the inputs and outputs to the system
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
@@ -100,23 +111,21 @@ namespace AprilFools
             randomPopupThread.Start();
 
 
-            StartMainBackgroundThread();
+            MainBackgroundThread();
         }
 
-        static void StartMainBackgroundThread()
+        static void MainBackgroundThread()
         {
             //dont start a new thread, just use the base thread
             while (_applicationRunning)
             {
-                //check for delated start
-                if (_delayedStartEnabled && _delayedStartTime <= DateTime.Now)
-                {
-                    _allPrankingEnabled = true;
-                    _delayedStartEnabled = false;
-                }
-                
                 //check for timed events here
-
+                //act on all scheduled events
+                while (schedule.NextEvent != null && schedule.NextEvent.Time <= DateTime.Now)
+                {
+                    ProcessEvent(schedule.NextEvent.Event);
+                    schedule.RemoveNextEvent();
+                }
 
 
                 Thread.Sleep(_mainThreadPollingInterval);
@@ -125,7 +134,7 @@ namespace AprilFools
             ExitApplication();
         }
 
-        static void HotKeyManager_HotKeyPressed(object sender, HotKeyEventArgs e)
+        static void HotKeyPressed(object sender, HotKeyEventArgs e)
         {
 
             if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
@@ -136,13 +145,22 @@ namespace AprilFools
             else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
             {
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
-                StopPranking();
+                PausePranking();
             }
             else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.F4)
             {
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
                 //stop everything and kill application
                 _applicationRunning = false;
+            }
+            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D1)
+            {
+#if _TESTING
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key");
+                TestCode();
+#else
+                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key - disabled without test mode");
+#endif
             }
             else
             {
@@ -156,24 +174,24 @@ namespace AprilFools
 #if _TESTING
             if (!_allPrankingEnabled)
             {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
             }
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
 #endif
 
             _allPrankingEnabled = true;
         }
 
-        public static void StopPranking()
+        public static void PausePranking()
         {
 #if _TESTING
             if (_allPrankingEnabled)
             {
-                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
-                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
+                GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
             }
-            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Shrt);
+            GenericsClass.Beep(BeepPitch.Low, BeepDurration.Short);
 #endif
 
             _allPrankingEnabled = false;
@@ -197,6 +215,11 @@ namespace AprilFools
             randomPopupThread.Abort();
         }
 
+        public static void TestCode()
+        {
+            //BombBeepCountdown();
+            schedule.AddEvent(PrankerEvent.RunMouseThread20s, 0);
+        }
 
         #region Thread Functions
         /// <summary>
@@ -209,20 +232,24 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
+            const int moveVariance = 10;
+            const int mouseMoveInteral = 50;
+            const int oddsOfMoving = 25;
+
             int moveX = 0;
             int moveY = 0;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _eraticMouseThreadRunning)
                 {
                     // Console.WriteLine(Cursor.Position.ToString());
 
-                    if (GenericsClass._random.Next(100) > 50)
+                    if (GenericsClass._random.Next(100) > 100-oddsOfMoving)
                     {
                         // Generate the random amount to move the cursor on X and Y
-                        moveX = GenericsClass._random.Next(20 + 1) - 10;
-                        moveY = GenericsClass._random.Next(20 + 1) - 10;
+                        moveX = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveY = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
 
                         // Change mouse cursor position to new random coordinates
                         Cursor.Position = new System.Drawing.Point(
@@ -230,7 +257,7 @@ namespace AprilFools
                             Cursor.Position.Y + moveY);
                     }
                 }
-                Thread.Sleep(50);
+                Thread.Sleep(mouseMoveInteral);
             }
         }
 
@@ -244,7 +271,7 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                 {
@@ -276,7 +303,7 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _randomSoundThreadRunning)
                 {
@@ -329,7 +356,7 @@ namespace AprilFools
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
             //Possibility pos_calc = popup.AddPossibility(1, "Calc");
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _randomPopupThreadRunning)
                 {
@@ -356,5 +383,93 @@ namespace AprilFools
             }
         }
         #endregion
+
+        #region Action functions
+        /// <summary>
+        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
+        /// </summary>
+        public static void BombBeepCountdown()
+        {
+            int pause = 2000;
+            while (pause > 400)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= (int)(pause * 0.15));
+            }
+            while (pause >= 25)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= 25);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+        }
+
+        public static void ProcessEvent(PrankerEvent e)
+        {
+            bool handled = true;
+            switch (e)
+            {
+                case PrankerEvent.StartApplication:
+                    StartPranking();
+                    break;
+                case PrankerEvent.PauseApplication:
+                    PausePranking();
+                    break;
+                case PrankerEvent.KillApplication:
+                    _applicationRunning = false;
+                    break;
+                case PrankerEvent.StartMouseThread:
+                    _eraticMouseThreadRunning = true;
+                    break;
+                case PrankerEvent.StopMouseThread:
+                    _eraticMouseThreadRunning = false;
+                    break;
+
+
+                case PrankerEvent.RunMouseThread20s:
+                    schedule.AddEvent(PrankerEvent.StartMouseThread, 0);
+                    schedule.AddEvent(PrankerEvent.StopMouseThread, 20*1000);
+                    break;
+                default:
+                    handled = false;
+                    break;
+            }
+            if(handled)
+                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e);
+            else
+                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e + " - NOT HANDLED");
+        }
+        #endregion
+    }
+
+    /// <summary>
+    /// List of Events that can occur in this app
+    /// </summary>
+    public enum PrankerEvent
+    {
+        PlayBombBeeping,
+        
+        //mouse events
+        StartMouseThread,
+        StopMouseThread,
+        RunMouseThread20s,
+        
+        StartApplication,
+        PauseApplication,
+        KillApplication,
     }
 }
