@@ -1,4 +1,4 @@
-﻿//#define _TESTING
+﻿#define _TESTING
 
 using System;
 using System.Collections.Generic;
@@ -38,12 +38,14 @@ namespace AprilFools
 
     public class Pranker
     {
+        /// <summary>This is always true untill the application is closing</summary>
         private static bool _applicationRunning = true;
-        private static bool _allPrankingEnabled = false;// set false if delayed start
+        /// <summary>This enabled or disabled any and all pranking action actions but does not kill the application.</summary>
+        private static bool _allPrankingEnabled = true;// will be set false if delayed start
 
         private static int _mainThreadPollingInterval = 50;//sleep time for main thread
 
-        private static bool _eraticMouseThreadRunning = true;
+        private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
         private static bool _randomSoundThreadRunning = false;
         private static bool _randomPopupThreadRunning = false;
@@ -216,58 +218,8 @@ namespace AprilFools
         public static void TestCode()
         {
             //BombBeepCountdown();
+            schedule.AddEvent(PrankerEvent.RunMouseThread20s, 0);
         }
-
-        #region Action functions
-        /// <summary>
-        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
-        /// </summary>
-        public static void BombBeepCountdown()
-        {
-            int pause = 2000;
-            while (pause > 400)
-            {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-                Thread.Sleep(pause -= (int)(pause * 0.15));
-            }
-            while (pause >= 25)
-            {
-                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-                Thread.Sleep(pause -= 25);
-            }
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
-
-            GenericsClass.Beep(BeepPitch.High, 100);
-            GenericsClass.Beep(BeepPitch.High, 100);
-            GenericsClass.Beep(BeepPitch.High, 100);
-
-            GenericsClass.Beep(BeepPitch.High, 50);
-            GenericsClass.Beep(BeepPitch.High, 50);
-            GenericsClass.Beep(BeepPitch.High, 50);
-        }
-
-        public static void ProcessEvent(PrankerEvent e)
-        {
-            switch (e)
-            {
-                case PrankerEvent.StartApplication:
-                    StartPranking();
-                    break;
-                case PrankerEvent.PauseApplication:
-                    PausePranking();
-                    break;
-                case PrankerEvent.KillApplication:
-                    _applicationRunning = false;
-                    break;
-            }
-        }
-        #endregion
 
         #region Thread Functions
         /// <summary>
@@ -280,20 +232,24 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
+            const int moveVariance = 10;
+            const int mouseMoveInteral = 50;
+            const int oddsOfMoving = 25;
+
             int moveX = 0;
             int moveY = 0;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _eraticMouseThreadRunning)
                 {
                     // Console.WriteLine(Cursor.Position.ToString());
 
-                    if (GenericsClass._random.Next(100) > 50)
+                    if (GenericsClass._random.Next(100) > 100-oddsOfMoving)
                     {
                         // Generate the random amount to move the cursor on X and Y
-                        moveX = GenericsClass._random.Next(20 + 1) - 10;
-                        moveY = GenericsClass._random.Next(20 + 1) - 10;
+                        moveX = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveY = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
 
                         // Change mouse cursor position to new random coordinates
                         Cursor.Position = new System.Drawing.Point(
@@ -301,7 +257,7 @@ namespace AprilFools
                             Cursor.Position.Y + moveY);
                     }
                 }
-                Thread.Sleep(50);
+                Thread.Sleep(mouseMoveInteral);
             }
         }
 
@@ -315,7 +271,7 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                 {
@@ -347,7 +303,7 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _randomSoundThreadRunning)
                 {
@@ -400,7 +356,7 @@ namespace AprilFools
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
             //Possibility pos_calc = popup.AddPossibility(1, "Calc");
 
-            while (true)
+            while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _randomPopupThreadRunning)
                 {
@@ -427,6 +383,77 @@ namespace AprilFools
             }
         }
         #endregion
+
+        #region Action functions
+        /// <summary>
+        /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
+        /// </summary>
+        public static void BombBeepCountdown()
+        {
+            int pause = 2000;
+            while (pause > 400)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= (int)(pause * 0.15));
+            }
+            while (pause >= 25)
+            {
+                GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+                Thread.Sleep(pause -= 25);
+            }
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Medium);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+            GenericsClass.Beep(BeepPitch.High, BeepDurration.Short);
+
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+            GenericsClass.Beep(BeepPitch.High, 100);
+
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+            GenericsClass.Beep(BeepPitch.High, 50);
+        }
+
+        public static void ProcessEvent(PrankerEvent e)
+        {
+            bool handled = true;
+            switch (e)
+            {
+                case PrankerEvent.StartApplication:
+                    StartPranking();
+                    break;
+                case PrankerEvent.PauseApplication:
+                    PausePranking();
+                    break;
+                case PrankerEvent.KillApplication:
+                    _applicationRunning = false;
+                    break;
+                case PrankerEvent.StartMouseThread:
+                    _eraticMouseThreadRunning = true;
+                    break;
+                case PrankerEvent.StopMouseThread:
+                    _eraticMouseThreadRunning = false;
+                    break;
+
+
+                case PrankerEvent.RunMouseThread20s:
+                    schedule.AddEvent(PrankerEvent.StartMouseThread, 0);
+                    schedule.AddEvent(PrankerEvent.StopMouseThread, 20*1000);
+                    break;
+                default:
+                    handled = false;
+                    break;
+            }
+            if(handled)
+                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e);
+            else
+                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e + " - NOT HANDLED");
+        }
+        #endregion
     }
 
     /// <summary>
@@ -435,8 +462,11 @@ namespace AprilFools
     public enum PrankerEvent
     {
         PlayBombBeeping,
+        
+        //mouse events
         StartMouseThread,
         StopMouseThread,
+        RunMouseThread20s,
         
         StartApplication,
         PauseApplication,
