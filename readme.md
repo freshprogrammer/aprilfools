@@ -9,3 +9,4 @@ Starts silently and runs in background until activated by delayed start or by ho
 - Alt+Shfit+F4 Kill application - non reversible without manual restart
 
 - Alt+Shfit+1 Test Button - only runs in test mode
+- Alt+Shfit+2 Test Button - only runs in test mode
