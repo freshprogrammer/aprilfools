@@ -176,10 +176,8 @@ namespace AprilFools
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2 - disabled without test mode");
 #endif
             }
-            else
+            else if (keyMapCounter!=0 && !MapKey(e))//try to map this unknown key (combo are ignored)
             {
-                //uncaught so far - test for all key listeners
-                MapKey(e);
                 //uncaught hotkey
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
             }
@@ -331,6 +329,8 @@ namespace AprilFools
                 UnregisterAllKeyMappings();
                 SendKeys.SendWait(output);
                 RegisterAllKeyMappings();
+
+                mapped = true;
 
                 if (keyMapCounter != -1)
                 {
