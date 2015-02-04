@@ -28,6 +28,7 @@ namespace AprilFools
      * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
      *  - popup random error mssages for chrome & memmory
 	 * Add some narrow wander AI to mouse movement - seperate proc
+     * hijack cut, copy paste? or screw with clipboard
      * 
      * --done
      * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
@@ -49,7 +50,9 @@ namespace AprilFools
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
         private static bool _randomSoundThreadRunning = false;
-        private static bool _randomPopupThreadRunning = false;
+        private static bool _randomPopupThreadRunning = true;
+
+        private static PrankerPopup popupType = PrankerPopup.None;
 
         //Key mapping using assosiative arrays / dictionary
         public static List<Keys> keysToTrack = null;
@@ -233,12 +236,14 @@ namespace AprilFools
         public static void TestCode1()
         {
             //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
-            EnableKeyMapping();
+            //EnableKeyMapping();
+            OpenPopup(PrankerPopup.ChromeBadDay);
         }
 
         public static void TestCode2()
         {
-            DisableKeyMapping();
+            //DisableKeyMapping();
+            OpenPopup(PrankerPopup.ChromeResources);
         }
 
         /// <summary>
@@ -369,7 +374,7 @@ namespace AprilFools
         {
             keyMapCounter = 0;
             UnregisterAllKeyMappings();
-            GC.Collect();
+            GC.Collect();//pretty sure this is doing absolutely nothing
         }
         #endregion
 
@@ -498,41 +503,87 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            const int popupInterval = 1000 * 60 * 90;//90 minutes
-            const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
-            const int oddsOfSeeingAPopupEachInterval = 10;
+            //const int popupInterval = 1000 * 60 * 90;//90 minutes
+            //const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
+            const int popupInterval = 1000 * 60 * 1;//1 minutes
+            const int popupIntervalVariance = 0;//0 minutes +/-
 
-            Choice popup = new Choice();
-            Possibility pos_chrome = popup.AddPossibility(5, "Chrome");
-            Possibility pos_mem = popup.AddPossibility(20, "Memory");
+            //create weighted popup probabilities for 'random' choice
+            Choice popupChoice = new Choice();
+            Possibility pos_chromeBadDay = popupChoice.AddPossibility(1, PrankerPopup.ChromeBadDay.ToString());
+            Possibility pos_chromeResources = popupChoice.AddPossibility(20, PrankerPopup.ChromeResources.ToString());
+            Possibility pos_windowsResources = popupChoice.AddPossibility(20, PrankerPopup.WindowsResources.ToString());
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
             //Possibility pos_calc = popup.AddPossibility(1, "Calc");
 
+            Possibility rndChoice;
+            var popupTypes = Enum.GetValues(typeof(PrankerPopup));
             while (_applicationRunning)
             {
                 if (_allPrankingEnabled && _randomPopupThreadRunning)
                 {
                     // Every 10 seconds roll the dice and 10% of the time show a dialog
-                    if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
+                    //if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
                     {
-                        // Determine which message to show user
-                        if (popup.RandomChoice().ID == pos_chrome.ID)
-                            MessageBox.Show(
-                               "Chrome is dangerously low on resources.",
-                                "Chrome",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
-                        else if (popup.RandomChoice().ID == pos_mem.ID)
-                            MessageBox.Show(
-                               "Your system is running low on resources",
-                                "Microsoft Windows",
-                                MessageBoxButtons.OK,
-                                MessageBoxIcon.Warning);
+                        if (popupType == PrankerPopup.Random)
+                        {
+                            // Determine which message to show user
+                            rndChoice = popupChoice.RandomChoice();
+                            
+                            foreach (PrankerPopup type in popupTypes)
+                            {
+                                if (type.ToString().Equals(rndChoice.Name))
+                                {
+                                    popupType = type;
+                                    break;
+                                }
+                            }
+
+                        }
+
+                        switch (popupType)
+                        {
+                            case PrankerPopup.None:
+                            case PrankerPopup.Random:
+                                break;
+                            case PrankerPopup.ChromeBadDay:
+                                MessageBox.Show("Chrome is having a bad day.\nIt is advised you save your work and restart your computer.",
+                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                break;
+                            case PrankerPopup.ChromeResources:
+                                MessageBox.Show("Chrome is dangerously low on resources.",
+                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                break;
+                            case PrankerPopup.WindowsResources:
+                                MessageBox.Show("Your system is running low on resources",
+                                    "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                                break;
+                        }
+                        popupType = PrankerPopup.None;//clear till this is called again
                     }
                 }
                 int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
-                Thread.Sleep(popupInterval + variance);
+                try
+                {
+                    Thread.Sleep(popupInterval + variance);
+                }
+                catch (ThreadInterruptedException) { }
             }
+        }
+
+        public static void OpenPopup(PrankerPopup popup)
+        {
+            popupType = popup;
+            randomPopupThread.Interrupt();
+        }
+
+        public enum PrankerPopup
+        {//cant do values here because it would break the switch
+            None,
+            Random,
+            ChromeResources,
+            ChromeBadDay,
+            WindowsResources,
         }
         #endregion
 
