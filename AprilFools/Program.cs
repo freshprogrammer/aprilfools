@@ -50,7 +50,7 @@ namespace AprilFools
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
         private static bool _randomSoundThreadRunning = false;
-        private static bool _popupThreadRunning = true;//should always run
+        private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
 
         private static PrankerPopup nextPopup = PrankerPopup.None;
 
@@ -237,7 +237,7 @@ namespace AprilFools
         {
             //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
             //EnableKeyMapping();
-            OpenPopupNow(PrankerPopup.ChromeBadDay);
+            OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
         }
 
         public static void TestCode2()
@@ -249,38 +249,62 @@ namespace AprilFools
         /// <summary>
         /// This funtion will setup which events will occur in the next 12 hours, then call its self to setup the next 12.
         /// </summary>
-        public static void CreateScheduel()
+        public static void CreateScheduel(ScheduleType todaysSchedule = ScheduleType.EasyDay)
         {
-            ScheduleType todaysSchedule = ScheduleType.EasyDay;
-
             //will run at startup and again every 12 hours
+
+            const int delayedStart = 25 * 60 * 1000; //wait 25 min till anything happens
+            const int endBuffer = 0;
+            const int lengthOfSession = 1 * 60 * 60 * 1000;//12 hours session
+
+            int xx = 0;
+            int eventTimeOffset;
+            int popupCountForSession;
+            int eraticMouseCountForSession;
+            int keyMap5EventCountForSession;
+            int keyMap10EventCountForSession;
+            
             switch (todaysSchedule)
             {
                 case ScheduleType.EasyDay:
-                    
-                    const int delayedStart = 60*60*1000; //wait 1 hour till anything happens
-                    const int endBuffer = 60*60*1000; //1 hour buffer at 'end'
-                    const int lengthOfSession = 12*60*60*1000;//12 hours seesion
+                    popupCountForSession = 2;
+                    eraticMouseCountForSession = 2;
+                    keyMap5EventCountForSession = 2;
+                    keyMap10EventCountForSession = 1;
 
-                    int actionTime;
-
-                    const int popupCountForToday = 1;
-                    int xx = 0;
-                    while (xx < popupCountForToday)//this should be a for
+                    for (xx = 1; xx <= popupCountForSession; xx++)
                     {
-                        actionTime = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
-                        schedule.AddEvent(PrankerEvent.PopupRandomSoon, actionTime);
+                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
+                        schedule.AddEvent(PrankerEvent.PopupRandomSoon, eventTimeOffset);
+                    }
+                    for (xx = 1; xx <= eraticMouseCountForSession; xx++)
+                    {
+                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
+                        schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, eventTimeOffset);
+                    }
+                    for (xx = 1; xx <= keyMap5EventCountForSession; xx++)
+                    {
+                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
+                        schedule.AddEvent(PrankerEvent.RunKeyboardMapping5, eventTimeOffset);
+                    }
+                    for (xx = 1; xx <= keyMap10EventCountForSession; xx++)
+                    {
+                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
+                        schedule.AddEvent(PrankerEvent.RunKeyboardMapping10, eventTimeOffset);
                     }
 
                     //restart at end of session
                     schedule.AddEvent(PrankerEvent.CreateSchedule, lengthOfSession);
+                    break;
+                case ScheduleType.MediumDay:
                     break;
             }
         }
 
         public enum ScheduleType
         {
-            EasyDay
+            EasyDay,
+            MediumDay,
         }
 
         #region Key Mapping
@@ -540,6 +564,7 @@ namespace AprilFools
             //create weighted popup probabilities for 'random' choice
             Choice popupChoice = new Choice();
             Possibility pos_chromeBadDay = popupChoice.AddPossibility(1, PrankerPopup.ChromeBadDay.ToString());
+            Possibility pos_chromeGPUProcessCrashed = popupChoice.AddPossibility(5, PrankerPopup.ChromeGPUProcessCrash.ToString());
             Possibility pos_chromeResources = popupChoice.AddPossibility(20, PrankerPopup.ChromeResources.ToString());
             Possibility pos_windowsResources = popupChoice.AddPossibility(20, PrankerPopup.WindowsResources.ToString());
             //Possibility pos_ie = popup.AddPossibility(20, "IE");
@@ -551,51 +576,51 @@ namespace AprilFools
             {
                 if (_allPrankingEnabled && _popupThreadRunning)
                 {
-                    // Every 10 seconds roll the dice and 10% of the time show a dialog
-                    //if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
+                    if (nextPopup == PrankerPopup.Random)
                     {
-                        if (nextPopup == PrankerPopup.Random)
-                        {
-                            // Determine which message to show user
-                            rndChoice = popupChoice.RandomChoice();
+                        // Determine which message to show user
+                        rndChoice = popupChoice.RandomChoice();
                             
-                            foreach (PrankerPopup type in popupTypes)
-                            {
-                                if (type.ToString().Equals(rndChoice.Name))
-                                {
-                                    nextPopup = type;
-                                    break;
-                                }
-                            }
-
-                        }
-
-                        switch (nextPopup)
+                        foreach (PrankerPopup type in popupTypes)
                         {
-                            case PrankerPopup.None:
-                            case PrankerPopup.Random:
+                            if (type.ToString().Equals(rndChoice.Name))
+                            {
+                                nextPopup = type;
                                 break;
-                            case PrankerPopup.ChromeBadDay:
-                                MessageBox.Show("Chrome is having a bad day.\nIt is advised you save your work and restart your computer.",
-                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                break;
-                            case PrankerPopup.ChromeResources:
-                                MessageBox.Show("Chrome is dangerously low on resources.",
-                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                                break;
-                            case PrankerPopup.WindowsResources:
-                                MessageBox.Show("Your system is running low on resources",
-                                    "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
-                                break;
+                            }
                         }
-                        nextPopup = PrankerPopup.None;//clear till this is called again
+
                     }
+
+                    switch (nextPopup)
+                    {
+                        case PrankerPopup.None:
+                        case PrankerPopup.Random:
+                            break;
+                        case PrankerPopup.ChromeGPUProcessCrash:
+                            DialogResult result = DialogResult.Retry;
+                                while(result == DialogResult.Retry)
+                                    result = MessageBox.Show("Chrome GPU process has crashed.",
+                                        "Chrome", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
+                            break;
+                        case PrankerPopup.ChromeBadDay:
+                            MessageBox.Show("Chrome is having a bad day.\nIt is advised you save your work and restart your computer.",
+                                "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            break;
+                        case PrankerPopup.ChromeResources:
+                            MessageBox.Show("Chrome is dangerously low on resources.",
+                                "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                            break;
+                        case PrankerPopup.WindowsResources:
+                            MessageBox.Show("Your system is running low on resources",
+                                "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                            break;
+                    }
+                    nextPopup = PrankerPopup.None;//clear till this is called again
                 }
-                int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 try
                 {
-                    //Thread.Sleep(popupInterval + variance); //this should be moved to the scheduling
-                    Thread.Sleep(100);//temp hack
+                    Thread.Sleep(100);
                 }
                 catch (ThreadInterruptedException) { }
             }
@@ -613,6 +638,7 @@ namespace AprilFools
             Random,
             ChromeResources,
             ChromeBadDay,
+            ChromeGPUProcessCrash,
             WindowsResources,
         }
         #endregion
@@ -675,6 +701,9 @@ namespace AprilFools
                     break;
                 case PrankerEvent.RunKeyboardMapping10:
                     EnableKeyMapping(10);
+                    break;
+                case PrankerEvent.CreateSchedule:
+                    CreateScheduel();
                     break;
                 default:
                     handled = false;
