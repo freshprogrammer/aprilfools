@@ -50,9 +50,9 @@ namespace AprilFools
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
         private static bool _randomSoundThreadRunning = false;
-        private static bool _randomPopupThreadRunning = true;
+        private static bool _popupThreadRunning = true;//should always run
 
-        private static PrankerPopup popupType = PrankerPopup.None;
+        private static PrankerPopup nextPopup = PrankerPopup.None;
 
         //Key mapping using assosiative arrays / dictionary
         public static List<Keys> keysToTrack = null;
@@ -66,7 +66,7 @@ namespace AprilFools
         private static Thread eraticMouseThread;
         private static Thread eraticKeyboardThread;
         private static Thread randomSoundThread;
-        private static Thread randomPopupThread;
+        private static Thread popupThread;
 
         /// <summary>
         /// Entry point for prank application
@@ -111,14 +111,14 @@ namespace AprilFools
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
             randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
-            randomPopupThread = new Thread(new ThreadStart(RandomPopupThread));
+            popupThread = new Thread(new ThreadStart(PopupThread));
             // Start all of the threads
             eraticMouseThread.Start();
             eraticKeyboardThread.Start();
             randomSoundThread.Start();
-            randomPopupThread.Start();
+            popupThread.Start();
 
-            CreateTodaysScheduel();
+            CreateScheduel();
 
             MainBackgroundThread();
         }
@@ -230,28 +230,57 @@ namespace AprilFools
             eraticMouseThread.Abort();
             eraticKeyboardThread.Abort();
             randomSoundThread.Abort();
-            randomPopupThread.Abort();
+            popupThread.Abort();
         }
 
         public static void TestCode1()
         {
             //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
             //EnableKeyMapping();
-            OpenPopup(PrankerPopup.ChromeBadDay);
+            OpenPopupNow(PrankerPopup.ChromeBadDay);
         }
 
         public static void TestCode2()
         {
             //DisableKeyMapping();
-            OpenPopup(PrankerPopup.ChromeResources);
+            OpenPopupNow(PrankerPopup.ChromeResources);
         }
 
         /// <summary>
         /// This funtion will setup which events will occur in the next 12 hours, then call its self to setup the next 12.
         /// </summary>
-        public static void CreateTodaysScheduel()
+        public static void CreateScheduel()
         {
+            ScheduleType todaysSchedule = ScheduleType.EasyDay;
 
+            //will run at startup and again every 12 hours
+            switch (todaysSchedule)
+            {
+                case ScheduleType.EasyDay:
+                    
+                    const int delayedStart = 60*60*1000; //wait 1 hour till anything happens
+                    const int endBuffer = 60*60*1000; //1 hour buffer at 'end'
+                    const int lengthOfSession = 12*60*60*1000;//12 hours seesion
+
+                    int actionTime;
+
+                    const int popupCountForToday = 1;
+                    int xx = 0;
+                    while (xx < popupCountForToday)//this should be a for
+                    {
+                        actionTime = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
+                        schedule.AddEvent(PrankerEvent.PopupRandomSoon, actionTime);
+                    }
+
+                    //restart at end of session
+                    schedule.AddEvent(PrankerEvent.CreateSchedule, lengthOfSession);
+                    break;
+            }
+        }
+
+        public enum ScheduleType
+        {
+            EasyDay
         }
 
         #region Key Mapping
@@ -496,10 +525,10 @@ namespace AprilFools
         /// <summary>
         /// This thread will popup fake error notifications to make the user go crazy and pull their hair out
         /// </summary>
-        public static void RandomPopupThread()
+        public static void PopupThread()
         {
-            Console.WriteLine("RandomPopupThread Started");
-            Thread.CurrentThread.Name = "RandomPopupThread";
+            Console.WriteLine("PopupThread Started");
+            Thread.CurrentThread.Name = "PopupThread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -520,12 +549,12 @@ namespace AprilFools
             var popupTypes = Enum.GetValues(typeof(PrankerPopup));
             while (_applicationRunning)
             {
-                if (_allPrankingEnabled && _randomPopupThreadRunning)
+                if (_allPrankingEnabled && _popupThreadRunning)
                 {
                     // Every 10 seconds roll the dice and 10% of the time show a dialog
                     //if (GenericsClass._random.Next(100) >= (100 - oddsOfSeeingAPopupEachInterval))
                     {
-                        if (popupType == PrankerPopup.Random)
+                        if (nextPopup == PrankerPopup.Random)
                         {
                             // Determine which message to show user
                             rndChoice = popupChoice.RandomChoice();
@@ -534,14 +563,14 @@ namespace AprilFools
                             {
                                 if (type.ToString().Equals(rndChoice.Name))
                                 {
-                                    popupType = type;
+                                    nextPopup = type;
                                     break;
                                 }
                             }
 
                         }
 
-                        switch (popupType)
+                        switch (nextPopup)
                         {
                             case PrankerPopup.None:
                             case PrankerPopup.Random:
@@ -559,22 +588,23 @@ namespace AprilFools
                                     "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                                 break;
                         }
-                        popupType = PrankerPopup.None;//clear till this is called again
+                        nextPopup = PrankerPopup.None;//clear till this is called again
                     }
                 }
                 int variance = GenericsClass._random.Next(popupIntervalVariance * 2) - popupIntervalVariance * 2 - popupIntervalVariance + 1; //*2 for +/- then +1 to include the Next() MAX
                 try
                 {
-                    Thread.Sleep(popupInterval + variance);
+                    //Thread.Sleep(popupInterval + variance); //this should be moved to the scheduling
+                    Thread.Sleep(100);//temp hack
                 }
                 catch (ThreadInterruptedException) { }
             }
         }
 
-        public static void OpenPopup(PrankerPopup popup)
+        public static void OpenPopupNow(PrankerPopup popup)
         {
-            popupType = popup;
-            randomPopupThread.Interrupt();
+            nextPopup = popup;
+            popupThread.Interrupt();
         }
 
         public enum PrankerPopup
@@ -631,15 +661,8 @@ namespace AprilFools
                     _randomSoundThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
                     break;
-                case PrankerEvent.StartRandomPopupThread:
-                    _randomPopupThreadRunning = true;
-                    break;
-                case PrankerEvent.StopRandomPopupThread:
-                    _randomPopupThreadRunning = false;
-                    break;
-                case PrankerEvent.RunRandomPopupThread20s:
-                    _randomPopupThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopRandomPopupThread, 20 * 1000);
+                case PrankerEvent.PopupRandomSoon:
+                    nextPopup = PrankerPopup.Random;
                     break;
                 case PrankerEvent.StartKeyboardMapping:
                     EnableKeyMapping();
@@ -690,10 +713,10 @@ namespace AprilFools
         RunRandomSoundThread20s,
 
         //popup events
-        StartRandomPopupThread,
-        StopRandomPopupThread,
-        RunRandomPopupThread20s,
+        PopupRandomSoon,
         
+        CreateSchedule,
+
         StartApplication,
         PauseApplication,
         KillApplication,
