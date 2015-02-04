@@ -29,6 +29,7 @@ namespace AprilFools
      *  - popup random error mssages for chrome & memmory
 	 * Add some narrow wander AI to mouse movement - seperate proc
      * hijack cut, copy paste? or screw with clipboard
+     * hide desktop icons - win+d -> cntxt->v->d -> win+d
      * 
      * --done
      * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
@@ -103,7 +104,7 @@ namespace AprilFools
             if (startDelay > 0)
             {
                 _allPrankingEnabled = false;
-                schedule.AddEvent(PrankerEvent.StartApplication, startDelay*1000);
+                schedule.AddEvent(PrankerEvent.StartPranking, startDelay*1000);
             }
             Console.WriteLine("Starting Core Threads");
             
@@ -118,7 +119,7 @@ namespace AprilFools
             randomSoundThread.Start();
             popupThread.Start();
 
-            CreateScheduel();
+            CreateSchedule();
 
             MainBackgroundThread();
         }
@@ -246,59 +247,50 @@ namespace AprilFools
             OpenPopupNow(PrankerPopup.ChromeResources);
         }
 
+        const int defaultSessionStartDelay = 25 * 60 * 1000; //wait 25 min till anything happens
+        const int defaultSessionDurration = 12 * 60 * 60 * 1000;//12 hours session
         /// <summary>
         /// This funtion will setup which events will occur in the next 12 hours, then call its self to setup the next 12.
         /// </summary>
-        public static void CreateScheduel(ScheduleType todaysSchedule = ScheduleType.EasyDay)
+        public static void CreateSchedule(ScheduleType scheduleType=ScheduleType.EasyDay, 
+            int sessionDurration = defaultSessionDurration, 
+            bool loopSession = true, 
+            int startDelay=defaultSessionStartDelay)
         {
-            //will run at startup and again every 12 hours
+            List<PrankerEvent> plan = new List<PrankerEvent>(5);
 
-            const int delayedStart = 25 * 60 * 1000; //wait 25 min till anything happens
-            const int endBuffer = 0;
-            const int lengthOfSession = 1 * 60 * 60 * 1000;//12 hours session
-
-            int xx = 0;
-            int eventTimeOffset;
-            int popupCountForSession;
-            int eraticMouseCountForSession;
-            int keyMap5EventCountForSession;
-            int keyMap10EventCountForSession;
-            
-            switch (todaysSchedule)
+            switch (scheduleType)
             {
                 case ScheduleType.EasyDay:
-                    popupCountForSession = 2;
-                    eraticMouseCountForSession = 2;
-                    keyMap5EventCountForSession = 2;
-                    keyMap10EventCountForSession = 1;
-
-                    for (xx = 1; xx <= popupCountForSession; xx++)
-                    {
-                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
-                        schedule.AddEvent(PrankerEvent.PopupRandomSoon, eventTimeOffset);
-                    }
-                    for (xx = 1; xx <= eraticMouseCountForSession; xx++)
-                    {
-                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
-                        schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, eventTimeOffset);
-                    }
-                    for (xx = 1; xx <= keyMap5EventCountForSession; xx++)
-                    {
-                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
-                        schedule.AddEvent(PrankerEvent.RunKeyboardMapping5, eventTimeOffset);
-                    }
-                    for (xx = 1; xx <= keyMap10EventCountForSession; xx++)
-                    {
-                        eventTimeOffset = Generics.GenericsClass._random.Next(delayedStart, lengthOfSession - endBuffer);
-                        schedule.AddEvent(PrankerEvent.RunKeyboardMapping10, eventTimeOffset);
-                    }
-
-                    //restart at end of session
-                    schedule.AddEvent(PrankerEvent.CreateSchedule, lengthOfSession);
+                    plan.Add(PrankerEvent.CreateRandomPopupNow);
+                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.MapNext5Keys);
+                    plan.Add(PrankerEvent.MapNext5Keys);
                     break;
                 case ScheduleType.MediumDay:
+                    plan.Add(PrankerEvent.CreateRandomPopupNow);
+                    plan.Add(PrankerEvent.CreateRandomPopupNow);
+                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.MapNext5Keys);
+                    plan.Add(PrankerEvent.MapNext5Keys);
+                    plan.Add(PrankerEvent.MapNext10Keys);
                     break;
             }
+
+            //spread plan throughout session randomly
+            int eventTimeOffset;
+            foreach (PrankerEvent e in plan)
+            {
+                eventTimeOffset = Generics.GenericsClass._random.Next(startDelay, sessionDurration);
+                schedule.AddEvent(e, eventTimeOffset);
+            }
+            schedule.AddEvent(PrankerEvent.CreateSchedule, sessionDurration);
         }
 
         public enum ScheduleType
@@ -556,11 +548,6 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            //const int popupInterval = 1000 * 60 * 90;//90 minutes
-            //const int popupIntervalVariance = 1000 * 60 * 10;//10 minutes +/-
-            const int popupInterval = 1000 * 60 * 1;//1 minutes
-            const int popupIntervalVariance = 0;//0 minutes +/-
-
             //create weighted popup probabilities for 'random' choice
             Choice popupChoice = new Choice();
             Possibility pos_chromeBadDay = popupChoice.AddPossibility(1, PrankerPopup.ChromeBadDay.ToString());
@@ -632,6 +619,11 @@ namespace AprilFools
             popupThread.Interrupt();
         }
 
+        public static void ToggleHiddenDesktopIcons()
+        {
+            //SendKeys.SendWai
+        }
+
         public enum PrankerPopup
         {//cant do values here because it would break the switch
             None,
@@ -648,10 +640,13 @@ namespace AprilFools
             bool handled = true;
             switch (e)
             {
-                case PrankerEvent.StartApplication:
+                case PrankerEvent.DisableStartup:
+                    //TODO handle this case
+                    break;
+                case PrankerEvent.StartPranking:
                     StartPranking();
                     break;
-                case PrankerEvent.PauseApplication:
+                case PrankerEvent.PausePranking:
                     PausePranking();
                     break;
                 case PrankerEvent.KillApplication:
@@ -662,6 +657,14 @@ namespace AprilFools
                     break;
                 case PrankerEvent.StopEraticMouseThread:
                     _eraticMouseThreadRunning = false;
+                    break;
+                case PrankerEvent.RunEraticMouseThread5s:
+                    _eraticMouseThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 5 * 1000);
+                    break;
+                case PrankerEvent.RunEraticMouseThread10s:
+                    _eraticMouseThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 10 * 1000);
                     break;
                 case PrankerEvent.RunEraticMouseThread20s:
                     _eraticMouseThreadRunning = true;
@@ -687,23 +690,23 @@ namespace AprilFools
                     _randomSoundThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
                     break;
-                case PrankerEvent.PopupRandomSoon:
+                case PrankerEvent.CreateRandomPopupNow:
                     nextPopup = PrankerPopup.Random;
                     break;
-                case PrankerEvent.StartKeyboardMapping:
+                case PrankerEvent.StartMappingAllKeys:
                     EnableKeyMapping();
                     break;
-                case PrankerEvent.StopKeyboardMapping:
+                case PrankerEvent.StopMappingAllKeys:
                     DisableKeyMapping();
                     break;
-                case PrankerEvent.RunKeyboardMapping5:
+                case PrankerEvent.MapNext5Keys:
                     EnableKeyMapping(5);
                     break;
-                case PrankerEvent.RunKeyboardMapping10:
+                case PrankerEvent.MapNext10Keys:
                     EnableKeyMapping(10);
                     break;
                 case PrankerEvent.CreateSchedule:
-                    CreateScheduel();
+                    CreateSchedule();
                     break;
                 default:
                     handled = false;
@@ -724,16 +727,18 @@ namespace AprilFools
         //mouse events
         StartEraticMouseThread,
         StopEraticMouseThread,
+        RunEraticMouseThread5s,
+        RunEraticMouseThread10s,
         RunEraticMouseThread20s,
 
         //keyboard events
         StartEraticKeyboardThread,
         StopEraticKeyboardThread,
         RunEraticKeyboardThread20s,
-        StartKeyboardMapping,
-        StopKeyboardMapping,
-        RunKeyboardMapping5,
-        RunKeyboardMapping10,
+        StartMappingAllKeys,
+        StopMappingAllKeys,
+        MapNext5Keys,
+        MapNext10Keys,
 
         //Sound events
         PlayBombBeeping,
@@ -742,12 +747,15 @@ namespace AprilFools
         RunRandomSoundThread20s,
 
         //popup events
-        PopupRandomSoon,
-        
-        CreateSchedule,
+        CreateRandomPopupNow,
 
-        StartApplication,
-        PauseApplication,
+        
+        //
+        CreateSchedule,
+        DisableStartup, //this is in case I dont want the application to run at all even in the application is launched - must be checked in external source at startup
+
+        StartPranking,
+        PausePranking,
         KillApplication,
     }
 }
