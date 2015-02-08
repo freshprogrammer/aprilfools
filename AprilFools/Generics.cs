@@ -3,14 +3,17 @@ using System.Runtime.InteropServices;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Net;
+using System.IO;
+using System.Text;
 
 namespace Generics
 {
-    #region BeepsGeneric vaiables and functions
     public class GenericsClass
     {
         public static Random _random = new Random();
 
+        #region Beeps vaiables and functions
         public static void Beep(BeepPitch p, BeepDurration d)   { Beep((int)p, (int)d); }
         public static void Beep(BeepPitch p, int d)             { Beep((int)p, d); }
         public static void Beep(int p, BeepDurration d)         { Beep(p, (int)d); }
@@ -48,8 +51,48 @@ namespace Generics
             GenericsClass.Beep(BeepPitch.High, 50);
             GenericsClass.Beep(BeepPitch.High, 50);
         }
+        #endregion
+
+        #region Web Crawling
+        private const int DOWNLOAD_HTML_TIMEOUT = 1000 * 60 * 5;
+
+        public static string DownloadHTML(string url, string cookie = null, bool reportExceptions = false)
+        {
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Timeout = DOWNLOAD_HTML_TIMEOUT;
+                if (cookie != null)
+                    request.Headers.Add(HttpRequestHeader.Cookie, cookie);
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                if (response.StatusCode == HttpStatusCode.OK)
+                {
+                    Stream receiveStream = response.GetResponseStream();
+                    StreamReader readStream = null;
+                    if (response.CharacterSet == null)
+                        readStream = new StreamReader(receiveStream);
+                    else
+                        readStream = new StreamReader(receiveStream, Encoding.GetEncoding(response.CharacterSet));
+                    string data = readStream.ReadToEnd();
+                    response.Close();
+                    readStream.Close();
+                    return data;
+                }
+                return null;
+            }
+            catch (WebException e)
+            {
+                if (reportExceptions)
+                {
+                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from " + url + " - " + e);
+                    return null;
+                }
+                else
+                    throw e;
+            }
+        }
+        #endregion
     }
-    #endregion
 
     #region keyboard hooks
     //used implementation from here http://stackoverflow.com/questions/3654787/global-hotkey-in-console-application
@@ -347,6 +390,7 @@ namespace Generics
     #region EventScheduler
     public class EventScheduler<T>
     {
+        private static object Lock = new Object();
         private List<ScheduledEvent<T>> schedule;
 
         public ScheduledEvent<T> NextEvent
@@ -356,30 +400,42 @@ namespace Generics
 
         public EventScheduler()
         {
-            schedule = new List<ScheduledEvent<T>>(10);
+            lock (Lock)
+            {
+                schedule = new List<ScheduledEvent<T>>(10);
+            }
         }
 
         public void AddEvent(ScheduledEvent<T> e)
         {
-            schedule.Add(e);
-            schedule.Sort();
+            lock (Lock)
+            {
+                schedule.Add(e);
+                schedule.Sort();
+            }
         }
 
         public void RemoveEventsByType(T t)
         {
-            int xx = 0;
-            while (xx < schedule.Count)
+            lock (Lock)
             {
-                if (schedule[xx].Event.Equals(t))
-                    schedule.RemoveAt(xx);
-                else
-                    xx++;
+                int xx = 0;
+                while (xx < schedule.Count)
+                {
+                    if (schedule[xx].Event.Equals(t))
+                        schedule.RemoveAt(xx);
+                    else
+                        xx++;
+                }
             }
         }
 
         public void ClearSchedule()
         {
-            schedule.Clear();
+            lock (Lock)
+            {
+                schedule.Clear();
+            }
         }
 
         /// <summary>
@@ -395,7 +451,10 @@ namespace Generics
 
         public void RemoveNextEvent()
         {
-            schedule.RemoveAt(0);
+            lock (Lock)
+            {
+                schedule.RemoveAt(0);
+            }
         }
     }
 
@@ -439,5 +498,5 @@ namespace Generics
             return "ScheduledEvent(" + Event + " at " + Time + ")";
         }
     }
-#endregion
+    #endregion
 }
