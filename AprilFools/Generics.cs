@@ -457,14 +457,14 @@ namespace Generics
             }
         }
 
-        public string UploadString()
+        public override string ToString()
         {
             string result = "";
             foreach(ScheduledEvent<T> e in schedule)
             {
                 result += e.Time.ToString("MM/dd/yyyy hh:mm:ss tt") + " " + e.Event + "\n";
             }
-            return result;
+            return result.TrimEnd();
         }
     }
 

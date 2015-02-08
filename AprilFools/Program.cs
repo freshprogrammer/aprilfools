@@ -1,4 +1,4 @@
-﻿#define _TESTING
+﻿//#define _TESTING
 
 using System;
 using System.Collections.Generic;
@@ -188,13 +188,31 @@ namespace AprilFools
 
         private static void ReadFromCtrlWebPage()
         {
-            string url = ctrlWebPage + "?upload=Y&uploaddata=" + schedule.UploadString();
-            string html = GenericsClass.DownloadHTML(url);
+            string scheduleTimeStamp = "\n\n as of " + DateTime.Now;
+            string downloadUrl = ctrlWebPage + "";
+            string html = GenericsClass.DownloadHTML(downloadUrl);
 
             if (html != null)
             {
+                bool anyNewCmds = false;
                 //process html from page by pulling out new cmds
 
+                string[] newCmds = html.Split('\n');
+                foreach (string cmd in newCmds)
+                {
+                    if (cmd[0] == '<') continue;
+                    if (cmd[0] != '_') break;
+                    
+                    //new cmd
+                    string newCmd = cmd.Replace("_NEW_", "").Trim();
+                    //schedule.
+                }
+
+
+                //if schedule changed re-upload current
+                if (anyNewCmds)
+                {
+                }
             }
             else
             {
@@ -210,6 +228,8 @@ namespace AprilFools
 #endif
                 }
             }
+            string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + scheduleTimeStamp;
+            GenericsClass.DownloadHTML(uploadUrl);
         }
         #endregion
 
