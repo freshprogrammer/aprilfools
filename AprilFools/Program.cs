@@ -128,7 +128,7 @@ namespace AprilFools
         /// <param name="sessionDurration">Default durration is 8 hours</param>
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
-        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.EasyDay, 
+        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.SuperEasyDay, 
             int sessionDurration = sessionDefaultDurration, 
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
@@ -137,6 +137,12 @@ namespace AprilFools
 
             switch (scheduleType)
             {
+                case PrankerSchedule.SuperEasyDay:
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.MapNext5Keys);
+                    break;
                 case PrankerSchedule.EasyDay:
                     plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
@@ -171,6 +177,7 @@ namespace AprilFools
 
         public enum PrankerSchedule
         {
+            SuperEasyDay,
             EasyDay,
             MediumDay,
         }
@@ -447,30 +454,37 @@ namespace AprilFools
         /// </summary>
         public static void EraticKeyboardThread()
         {
-            Console.WriteLine("EraticKeyboardThread Started");
-            Thread.CurrentThread.Name = "EraticKeyboardThread";
-            Thread.CurrentThread.IsBackground = true;
-            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
-
-            while (_applicationRunning)
+            try
             {
-                if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
+                Console.WriteLine("EraticKeyboardThread Started");
+                Thread.CurrentThread.Name = "EraticKeyboardThread";
+                Thread.CurrentThread.IsBackground = true;
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+
+                while (_applicationRunning)
                 {
-                    //if (GenericsClass._random.Next(100) >= 95)
+                    if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                     {
-                        // Generate a random capitol letter
-                        char key = (char)(GenericsClass._random.Next(26) + 65);
-
-                        // 50/50 make it lower case
-                        if (GenericsClass._random.Next(2) == 0)
+                        //if (GenericsClass._random.Next(100) >= 95)
                         {
-                            key = Char.ToLower(key);
-                        }
+                            // Generate a random capitol letter
+                            char key = (char)(GenericsClass._random.Next(26) + 65);
 
-                        SendKeys.SendWait(key.ToString());
+                            // 50/50 make it lower case
+                            if (GenericsClass._random.Next(2) == 0)
+                            {
+                                key = Char.ToLower(key);
+                            }
+
+                            SendKeys.SendWait(key.ToString());
+                        }
                     }
+                    Thread.Sleep(GenericsClass._random.Next(300, 2000));
                 }
-                Thread.Sleep(GenericsClass._random.Next(300,2000));
+            }
+            catch (Exception)
+            {
+                //generic catch all to not crash the application
             }
         }
 
@@ -958,5 +972,4 @@ namespace AprilFools
         }
         #endregion
     }
-
 }
