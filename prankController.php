@@ -50,6 +50,11 @@
 		if(GetInput("EraticK10")==="Y") 	AppendCmd("RunEraticKeyboard10s");
 		if(GetInput("EraticK20")==="Y") 	AppendCmd("RunEraticKeyboard20s");
 		if(GetInput("RandomPopup")==="Y")	AppendCmd("CreateRandomPopup");
+		if(GetInput("Play_A")==="Y")		AppendCmd("PlaySound_Asterisk");
+		if(GetInput("Play_B")==="Y")		AppendCmd("PlaySound_Beep");
+		if(GetInput("Play_E")==="Y")		AppendCmd("PlaySound_Exclamation");
+		if(GetInput("Play_H")==="Y")		AppendCmd("PlaySound_Hand");
+		if(GetInput("Play_Q")==="Y")		AppendCmd("PlaySound_Question");
 	}
 	
 	function CreateControlButtons()
@@ -67,6 +72,11 @@
 		CreateAControlButton("Eratic Keyboard 10s","EraticK10");
 		CreateAControlButton("Eratic Keyboard 20s","EraticK20");
 		CreateAControlButton("Random Popup","RandomPopup");
+		CreateAControlButton("Play Asterisk"   ,"Play_A");
+		CreateAControlButton("Play Beep"       ,"Play_B");
+		CreateAControlButton("Play Exclamation","Play_E");
+		CreateAControlButton("Play Hand"       ,"Play_H");
+		CreateAControlButton("Play Question"   ,"Play_Q");
 		//CreateAControlButton("Bomb Beep","Bomb");
 	}
 	

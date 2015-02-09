@@ -54,11 +54,11 @@ namespace AprilFools
         private static bool _externalControlThreadRunning = true;
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
-        private static bool _randomSoundThreadRunning = false;
+        private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
         private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
 
         private static bool _playBombBeepingNow = false;
-
+        private static PrankerSound nextSound = PrankerSound.None;
         private static PrankerPopup nextPopup = PrankerPopup.None;
 
         //Key mapping using assosiative arrays / dictionary
@@ -77,7 +77,7 @@ namespace AprilFools
         private static Thread externalControlThread;
         private static Thread eraticMouseThread;
         private static Thread eraticKeyboardThread;
-        private static Thread randomSoundThread;
+        private static Thread soundThread;
         private static Thread popupThread;
 
         /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
@@ -473,49 +473,73 @@ namespace AprilFools
         /// <summary>
         /// This will play system sounds at random to screw with the end user
         /// </summary>
-        public static void RandomSoundThread()
+        public static void SoundThread()
         {
-            Console.WriteLine("RandomSoundThread Started");
-            Thread.CurrentThread.Name = "RandomSoundThread";
+            Console.WriteLine("SoundThread Started");
+            Thread.CurrentThread.Name = "Sound Thread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_applicationRunning)
+            while (_applicationRunning && _soundThreadRunning)
             {
                 if (_allPrankingEnabled && _playBombBeepingNow)
                 {
                     _playBombBeepingNow = false;
                     GenericsClass.PlayBombBeepCountdown();
                 }
-                if (_allPrankingEnabled && _randomSoundThreadRunning)
+                if (_allPrankingEnabled && nextSound!=PrankerSound.None)
                 {
-                    // Determine if we're going to play a sound this time through the loop (20% odds)
-                    //if (_random.Next(100) >= 80)
-
                     // Randomly select a system sound
-                    int sound = GenericsClass._random.Next(5);
-                    sound = 3;
-                    switch (sound)
+                    if(nextSound==PrankerSound.Random)
                     {
-                        case 0:
-                            SystemSounds.Asterisk.Play();
-                            break;
-                        case 1:
-                            SystemSounds.Beep.Play();
-                            break;
-                        case 2:
-                            SystemSounds.Exclamation.Play();
-                            break;
-                        case 3:
-                            SystemSounds.Hand.Play();
-                            break;
-                        case 4:
-                            SystemSounds.Question.Play();
-                            break;
+                        int rnd = GenericsClass._random.Next(5);
+                        switch (rnd)
+                        {
+                            case 0:nextSound = PrankerSound.Asterisk;break;
+                            case 1:nextSound = PrankerSound.Beep;break;
+                            case 2:nextSound = PrankerSound.Exclamation;break;
+                            case 3:nextSound = PrankerSound.Hand;break;
+                            case 4:nextSound = PrankerSound.Question;break;
+                        }
                     }
+                    switch(nextSound)
+                    {
+                        case PrankerSound.Asterisk:
+                            SystemSounds.Asterisk.Play(); break;
+                        case PrankerSound.Beep:
+                            SystemSounds.Beep.Play(); break;
+                        case PrankerSound.Exclamation:
+                            SystemSounds.Exclamation.Play(); break;
+                        case PrankerSound.Hand:
+                            SystemSounds.Hand.Play(); break;
+                        case PrankerSound.Question:
+                            SystemSounds.Question.Play(); break;
+                    }
+                    nextSound = PrankerSound.None;
                 }
-                Thread.Sleep(500);
+                try
+                {
+                    Thread.Sleep(1000);
+                }
+                catch (ThreadInterruptedException) { }
             }
+        }
+
+        public static void PlaySound(PrankerSound sound)
+        {
+            nextSound = sound;
+            soundThread.Interrupt();
+        }
+
+        public enum PrankerSound
+        {
+            None,
+            Random,
+            Asterisk,
+            Beep,
+            Exclamation,
+            Hand,
+            Question,
         }
 
         /// <summary>
@@ -642,7 +666,7 @@ namespace AprilFools
             externalControlThread = new Thread(new ThreadStart(ExternalControlReadThread));
             eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
-            randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
+            soundThread = new Thread(new ThreadStart(SoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
 
             Console.WriteLine("Build Schedule");
@@ -661,7 +685,7 @@ namespace AprilFools
             externalControlThread.Start();
             eraticMouseThread.Start();
             eraticKeyboardThread.Start();
-            randomSoundThread.Start();
+            soundThread.Start();
             popupThread.Start();
 
             MainBackgroundThread();
@@ -728,7 +752,7 @@ namespace AprilFools
             // Kill all threads and exit application
             eraticMouseThread.Abort();
             eraticKeyboardThread.Abort();
-            randomSoundThread.Abort();
+            soundThread.Abort();
             popupThread.Abort();
         }
         #endregion
@@ -823,15 +847,23 @@ namespace AprilFools
                     _eraticKeyboardThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 20 * 1000);
                     break;
-                case PrankerEvent.StartRandomSoundThread:
-                    _randomSoundThreadRunning = true;
+                case PrankerEvent.PlayRandomSound:
+                    PlaySound(PrankerSound.Random);
                     break;
-                case PrankerEvent.StopRandomSoundThread:
-                    _randomSoundThreadRunning = false;
+                case PrankerEvent.PlaySound_Asterisk:
+                    PlaySound(PrankerSound.Asterisk);
                     break;
-                case PrankerEvent.RunRandomSoundThread20s:
-                    _randomSoundThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
+                case PrankerEvent.PlaySound_Beep:
+                    PlaySound(PrankerSound.Beep);
+                    break;
+                case PrankerEvent.PlaySound_Exclamation:
+                    PlaySound(PrankerSound.Exclamation);
+                    break;
+                case PrankerEvent.PlaySound_Hand:
+                    PlaySound(PrankerSound.Hand);
+                    break;
+                case PrankerEvent.PlaySound_Question:
+                    PlaySound(PrankerSound.Question);
                     break;
                 case PrankerEvent.PlayBombBeeping:
                     _playBombBeepingNow = true;
@@ -907,9 +939,12 @@ namespace AprilFools
 
             //Sound events
             PlayBombBeeping,
-            StartRandomSoundThread,
-            StopRandomSoundThread,
-            RunRandomSoundThread20s,
+            PlayRandomSound,
+            PlaySound_Asterisk,
+            PlaySound_Beep,
+            PlaySound_Exclamation,
+            PlaySound_Hand,
+            PlaySound_Question,
 
             //popup events
             CreateRandomPopup,
