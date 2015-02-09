@@ -37,19 +37,24 @@
 		//process button commands
 		//this must match the handle input function as well as the PrankerEvent enum names in the app code
 		//these must be else ifs so it is limited to 1 new cmd 
-		if(GetInput("Kill")==="Y") AppendCmd("KillApplication");
-		if(GetInput("Stop")==="Y") AppendCmd("PauseApplication");
-		if(GetInput("Beep")==="Y") AppendCmd("Beep");
-		if(GetInput("Rebuild")==="Y") AppendCmd("RebuildSchedule");
+		if(GetInput("Cancel")==="Y") 	AppendCmd("CancelAllNewComands");
+		if(GetInput("Kill")==="Y") 		AppendCmd("KillApplication");
+		if(GetInput("Pause")==="Y") 	AppendCmd("PausePranking");
+		if(GetInput("Bomb")==="Y") 		AppendCmd("PlayBombBeeping");
+		if(GetInput("Rebuild")==="Y") 	AppendCmd("RebuildSchedule");
+		if(GetInput("Clear")==="Y") 	AppendCmd("ClearSchedule");
 	}
 	
 	function CreateControlButtons()
 	{
 		//this must match the handle input function
 		CreateAControlButton("Refresh","");
-		CreateAControlButton("Stop","Stop");
-		CreateAControlButton("Beep","Beep");
+		CreateAControlButton("Cancel","Cancel");
+		CreateAControlButton("Kill","Kill","Y", true);
+		CreateAControlButton("Pause","Pause");
+		//CreateAControlButton("Bomb Beep","Bomb");
 		CreateAControlButton("Rebuild Schedule","Rebuild");
+		CreateAControlButton("Clear Schedule","Clear");
 	}
 	
 	function BuildPage()
@@ -75,9 +80,12 @@
 		//$schedule = ReadSchedule();
 	}
 	
-	function CreateAControlButton($dispName,$fieldName,$value='Y')
+	function CreateAControlButton($dispName,$fieldName,$value='Y',$confirm=false)
 	{
-		echo "	<form name='' action='' method=get style='display: inline-block;'>\n";
+		if($confirm)
+			echo "	<form name='' action='' method=get style='display: inline-block;' onsubmit=\"return confirm('Are you sure you want to do this?')\">\n";
+		else
+			echo "	<form name='' action='' method=get style='display: inline-block;'>\n";
 		echo "	<input type='submit' value='$dispName'>\n";
 		echo "	<input type='hidden'  name='$fieldName' value='$value'>\n";
 		echo "	</form>\n";

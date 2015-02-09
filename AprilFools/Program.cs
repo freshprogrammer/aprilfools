@@ -56,6 +56,8 @@ namespace AprilFools
         private static bool _randomSoundThreadRunning = false;
         private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
 
+        private static bool _playBombBeepingNow = false;
+
         private static PrankerPopup nextPopup = PrankerPopup.None;
 
         //Key mapping using assosiative arrays / dictionary
@@ -186,40 +188,78 @@ namespace AprilFools
             }
         }
 
+        const string NEW_CMD_TAG = "_NEW_";
+        const char CMD_SEPERATION_TAG = '\n';
         private static void ReadFromCtrlWebPage()
         {
-            string scheduleTimeStamp = "\n\n as of " + DateTime.Now;
+            string scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
             string downloadUrl = ctrlWebPage + "";
             string html = GenericsClass.DownloadHTML(downloadUrl);
 
             if (html != null)
             {
-                bool anyNewCmds = false;
                 //process html from page by pulling out new cmds
-
-                string[] newCmds = html.Split('\n');
-                foreach (string cmd in newCmds)
+                string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
+                List<PrankerEvent> requestedEvents = new List<PrankerEvent>();
+                foreach (string externalCmdString in newExternalCmds)
                 {
-                    if (cmd[0] == '<') continue;
-                    if (cmd[0] != '_') break;
+                    if (externalCmdString[0] == '<') continue;
+                    if (externalCmdString[0] != '_') break;
                     
                     //new cmd
-                    string newCmd = cmd.Replace("_NEW_", "").Trim();
-                    //schedule.
+                    string requestedExternalCmdString = externalCmdString.Replace(NEW_CMD_TAG, "").Trim();
+                    bool handled = false;
+                    var eventTypes = Enum.GetValues(typeof(PrankerEvent));
+                    foreach (PrankerEvent e in eventTypes)
+                    {
+                        if (e.ToString().Equals(requestedExternalCmdString))
+                        {
+                            requestedEvents.Add(e);
+                            handled = true;
+                        }
+                    }
+                    if (!handled)
+                    {
+                        Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
+                    }
                 }
 
+                if (requestedEvents.Count > 0)
+                {
+                    //make sure to ignore duplicates and process them in the correct order (like canceling all further cmds or killing the application before further pranking)
+                    requestedEvents = requestedEvents.Distinct().ToList();
+                    requestedEvents.Sort();
+                    foreach (PrankerEvent e in requestedEvents)
+                    {
+                        if (e == PrankerEvent.CancelAllNewComands) break;
+                        else if (e == PrankerEvent.KillApplication)
+                        {
+                            _applicationRunning = false;
+                            break;
+                        }
+                        else if (e == PrankerEvent.PausePranking)
+                        {
+                            _allPrankingEnabled = !_allPrankingEnabled;
+                            scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                        }
+                        else
+                        {
+                            schedule.AddEvent(e, 0);
+                        }
+                    }
+                }
 
                 //if schedule changed re-upload current
-                if (anyNewCmds)
-                {
-                }
+                //should always do this to keep page timestamp up to date
+                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + scheduleTimeStamp;
+                GenericsClass.DownloadHTML(uploadUrl);
             }
             else
             {
                 if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
                 {
                     _externalControlThreadRunning = false;
-                    Console.WriteLine("External control page timed out after "+externalControlPageFailAttempts+" attempts.");
+                    Console.WriteLine("ReadFromCtrlWebPage() - External control page timed out after " + externalControlPageFailAttempts + " attempts.");
 #if _TESTING
                     //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
@@ -228,8 +268,6 @@ namespace AprilFools
 #endif
                 }
             }
-            string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + scheduleTimeStamp;
-            GenericsClass.DownloadHTML(uploadUrl);
         }
         #endregion
 
@@ -441,6 +479,11 @@ namespace AprilFools
 
             while (_applicationRunning)
             {
+                if (_allPrankingEnabled && _playBombBeepingNow)
+                {
+                    _playBombBeepingNow = false;
+                    GenericsClass.PlayBombBeepCountdown();
+                }
                 if (_allPrankingEnabled && _randomSoundThreadRunning)
                 {
                     // Determine if we're going to play a sound this time through the loop (20% odds)
@@ -778,6 +821,9 @@ namespace AprilFools
                     _randomSoundThreadRunning = true;
                     schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
                     break;
+                case PrankerEvent.PlayBombBeeping:
+                    _playBombBeepingNow = true;
+                    break;
                 case PrankerEvent.CreateRandomPopupNow:
                     nextPopup = PrankerPopup.Random;
                     break;
@@ -800,6 +846,9 @@ namespace AprilFools
                     schedule.ClearSchedule();
                     CreateSchedule();
                     break;
+                case PrankerEvent.ClearSchedule:
+                    schedule.ClearSchedule();
+                    break;
                 default:
                     handled = false;
                     break;
@@ -811,17 +860,20 @@ namespace AprilFools
         }
         
         /// <summary>
-        /// List of Events that can occur in this app
+        /// List of Events that can occur in this app. NOTE: this is the order that they will be processed
         /// </summary>
         public enum PrankerEvent
         {
-            StartPranking,
-            PausePranking,
+            CancelAllNewComands,
             KillApplication,
+            DisableStartup, //this is in case I dont want the application to run at all even in the application is launched - must be checked in external source at startup
+            
+            PausePranking,
+            StartPranking,
 
             CreateSchedule,
+            ClearSchedule,
             RebuildSchedule,
-            DisableStartup, //this is in case I dont want the application to run at all even in the application is launched - must be checked in external source at startup
 
             //mouse events
             StartEraticMouseThread,

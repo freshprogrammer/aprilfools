@@ -22,7 +22,7 @@ namespace Generics
         /// <summary>
         /// Beep with less as less pause like a bomb. NOTE: this is a blocking proceedure that wont stop till its done.
         /// </summary>
-        public static void BombBeepCountdown()
+        public static void PlayBombBeepCountdown()
         {
             int pause = 2000;
             while (pause > 400)
@@ -451,9 +451,12 @@ namespace Generics
 
         public void RemoveNextEvent()
         {
-            lock (Lock)
+            if (schedule.Count > 0)
             {
-                schedule.RemoveAt(0);
+                lock (Lock)
+                {
+                    schedule.RemoveAt(0);
+                }
             }
         }
 
