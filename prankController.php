@@ -37,24 +37,37 @@
 		//process button commands
 		//this must match the handle input function as well as the PrankerEvent enum names in the app code
 		//these must be else ifs so it is limited to 1 new cmd 
-		if(GetInput("Cancel")==="Y") 	AppendCmd("CancelAllNewComands");
-		if(GetInput("Kill")==="Y") 		AppendCmd("KillApplication");
-		if(GetInput("Pause")==="Y") 	AppendCmd("PausePranking");
-		if(GetInput("Bomb")==="Y") 		AppendCmd("PlayBombBeeping");
-		if(GetInput("Rebuild")==="Y") 	AppendCmd("RebuildSchedule");
-		if(GetInput("Clear")==="Y") 	AppendCmd("ClearSchedule");
+		if(GetInput("Cancel")==="Y") 		AppendCmd("CancelAllNewComands");
+		if(GetInput("Kill")==="Y") 			AppendCmd("KillApplication");
+		if(GetInput("Pause")==="Y") 		AppendCmd("PausePranking");
+		if(GetInput("Bomb")==="Y") 			AppendCmd("PlayBombBeeping");
+		if(GetInput("Rebuild")==="Y") 		AppendCmd("RebuildSchedule");
+		if(GetInput("Clear")==="Y") 		AppendCmd("ClearSchedule");
+		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
+		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
+		if(GetInput("EraticM20")==="Y") 	AppendCmd("RunEraticMouse20s");
+		if(GetInput("EraticK5")==="Y") 		AppendCmd("RunEraticKeyboard5s");
+		if(GetInput("EraticK10")==="Y") 	AppendCmd("RunEraticKeyboard10s");
+		if(GetInput("EraticK20")==="Y") 	AppendCmd("RunEraticKeyboard20s");
+		if(GetInput("RandomPopup")==="Y")	AppendCmd("CreateRandomPopup");
 	}
 	
 	function CreateControlButtons()
 	{
 		//this must match the handle input function
-		CreateAControlButton("Refresh","");
 		CreateAControlButton("Cancel","Cancel");
 		CreateAControlButton("Kill","Kill","Y", true);
 		CreateAControlButton("Pause","Pause");
-		//CreateAControlButton("Bomb Beep","Bomb");
 		CreateAControlButton("Rebuild Schedule","Rebuild");
 		CreateAControlButton("Clear Schedule","Clear");
+		CreateAControlButton("Eratic Mouse 5s","EraticM5");
+		CreateAControlButton("Eratic Mouse 10s","EraticM10");
+		CreateAControlButton("Eratic Mouse 20s","EraticM20");
+		CreateAControlButton("Eratic Keyboard 5s","EraticK5");
+		CreateAControlButton("Eratic Keyboard 10s","EraticK10");
+		CreateAControlButton("Eratic Keyboard 20s","EraticK20");
+		CreateAControlButton("Random Popup","RandomPopup");
+		//CreateAControlButton("Bomb Beep","Bomb");
 	}
 	
 	function BuildPage()
@@ -69,6 +82,7 @@
 		echo $curSchedule;
 		echo "\nEND_CMDS-->\n";
 		echo "<div>\n";
+		echo "<a href=".">Refresh</a>\n";
 		CreateControlButtons();
 		echo "<hr>\n";
 		echo "</div>\n";
@@ -83,9 +97,9 @@
 	function CreateAControlButton($dispName,$fieldName,$value='Y',$confirm=false)
 	{
 		if($confirm)
-			echo "	<form name='' action='' method=get style='display: inline-block;' onsubmit=\"return confirm('Are you sure you want to do this?')\">\n";
+			echo "	<form name='' action='' method=post style='display: inline-block;' onsubmit=\"return confirm('Are you sure you want to do this?')\">\n";
 		else
-			echo "	<form name='' action='' method=get style='display: inline-block;'>\n";
+			echo "	<form name='' action='' method=post style='display: inline-block;'>\n";
 		echo "	<input type='submit' value='$dispName'>\n";
 		echo "	<input type='hidden'  name='$fieldName' value='$value'>\n";
 		echo "	</form>\n";
