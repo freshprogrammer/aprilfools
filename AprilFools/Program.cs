@@ -191,62 +191,65 @@ namespace AprilFools
             }
         }
 
-        private static void ReadFromCtrlWebPage()
+        private static void ReadFromCtrlWebPage(bool firstRun=false)
         {
             string downloadUrl = ctrlWebPage + "";
             string html = GenericsClass.DownloadHTML(downloadUrl);
 
             if (html != null)
             {
-                //process html from page by pulling out new cmds
-                string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
-                List<PrankerEvent> requestedEvents = new List<PrankerEvent>();
-                foreach (string externalCmdString in newExternalCmds)
+                if (!firstRun)
                 {
-                    if (externalCmdString[0] == '<') continue;
-                    if (externalCmdString[0] != '_') break;
-                    
-                    //new cmd
-                    string requestedExternalCmdString = externalCmdString.Replace(NEW_CMD_TAG, "").Trim();
-                    bool handled = false;
-                    var eventTypes = Enum.GetValues(typeof(PrankerEvent));
-                    foreach (PrankerEvent e in eventTypes)
+                    //process html from page by pulling out new cmds
+                    string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
+                    List<PrankerEvent> requestedEvents = new List<PrankerEvent>();
+                    foreach (string externalCmdString in newExternalCmds)
                     {
-                        if (e.ToString().Equals(requestedExternalCmdString))
+                        if (externalCmdString[0] == '<') continue;
+                        if (externalCmdString[0] != '_') break;
+
+                        //new cmd
+                        string requestedExternalCmdString = externalCmdString.Replace(NEW_CMD_TAG, "").Trim();
+                        bool handled = false;
+                        var eventTypes = Enum.GetValues(typeof(PrankerEvent));
+                        foreach (PrankerEvent e in eventTypes)
                         {
-                            requestedEvents.Add(e);
-                            handled = true;
+                            if (e.ToString().Equals(requestedExternalCmdString))
+                            {
+                                requestedEvents.Add(e);
+                                handled = true;
+                            }
+                        }
+                        if (!handled)
+                        {
+                            Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
                         }
                     }
-                    if (!handled)
-                    {
-                        Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
-                    }
-                }
 
-                if (requestedEvents.Count > 0)
-                {
-                    //make sure to ignore duplicates and process them in the correct order (like canceling all further cmds or killing the application before further pranking)
-                    requestedEvents = requestedEvents.Distinct().ToList();
-                    requestedEvents.Sort();
-                    foreach (PrankerEvent e in requestedEvents)
+                    if (requestedEvents.Count > 0)
                     {
-                        if (e == PrankerEvent.CancelAllNewComands) break;
+                        //make sure to ignore duplicates and process them in the correct order (like canceling all further cmds or killing the application before further pranking)
+                        requestedEvents = requestedEvents.Distinct().ToList();
+                        requestedEvents.Sort();
+                        foreach (PrankerEvent e in requestedEvents)
+                        {
+                            if (e == PrankerEvent.CancelAllNewComands) break;
 
-                        Console.WriteLine("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
-                        if (e == PrankerEvent.KillApplication)
-                        {
-                            _applicationRunning = false;
-                            break;
-                        }
-                        else if (e == PrankerEvent.PausePranking)
-                        {
-                            _allPrankingEnabled = !_allPrankingEnabled;
-                            
-                        }
-                        else
-                        {
-                            schedule.AddEvent(e, 0);
+                            Console.WriteLine("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
+                            if (e == PrankerEvent.KillApplication)
+                            {
+                                _applicationRunning = false;
+                                break;
+                            }
+                            else if (e == PrankerEvent.PausePranking)
+                            {
+                                _allPrankingEnabled = !_allPrankingEnabled;
+
+                            }
+                            else
+                            {
+                                schedule.AddEvent(e, 0);
+                            }
                         }
                     }
                 }
@@ -680,6 +683,9 @@ namespace AprilFools
             }
 
             CreateSchedule(PrankerSchedule.EasyDay, sessionDefaultDurration, true, sessionDefaultStartDelay);
+
+            //upldoad initial schedule and clear outstanding scheduled cmds
+            ReadFromCtrlWebPage(true);
 
             // Start all of the threads
             externalControlThread.Start();
