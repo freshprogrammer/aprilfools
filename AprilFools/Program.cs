@@ -51,11 +51,11 @@ namespace AprilFools
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
         private const int _externalControlThreadPollingInterval = 5*1000;
 
-        private static bool _externalControlThreadRunning = true;
-        private static bool _eraticMouseThreadRunning = false;
-        private static bool _eraticKeyboardThreadRunning = false;
+        private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
         private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
+        private static bool _eraticMouseThreadRunning = false;
+        private static bool _eraticKeyboardThreadRunning = false;
 
         private static bool _playBombBeepingNow = false;
         private static PrankerSound nextSound = PrankerSound.None;
@@ -287,32 +287,33 @@ namespace AprilFools
             //These keys will be registered as hoykeys
             keysToTrack = new List<Keys>(36);
             #region mapped Key list
-            keysToTrack.Add(Keys.A); keyMappings.Add(Keys.A, "s");
-            keysToTrack.Add(Keys.B); keyMappings.Add(Keys.B, "b");
-            keysToTrack.Add(Keys.C); keyMappings.Add(Keys.C, "c");
-            keysToTrack.Add(Keys.D); keyMappings.Add(Keys.D, "d");
-            keysToTrack.Add(Keys.E); keyMappings.Add(Keys.E, "e");
-            keysToTrack.Add(Keys.F); keyMappings.Add(Keys.F, "f");
-            keysToTrack.Add(Keys.G); keyMappings.Add(Keys.G, "g");
-            keysToTrack.Add(Keys.H); keyMappings.Add(Keys.H, "h");
-            keysToTrack.Add(Keys.I); keyMappings.Add(Keys.I, "i");
-            keysToTrack.Add(Keys.J); keyMappings.Add(Keys.J, "j");
-            keysToTrack.Add(Keys.K); keyMappings.Add(Keys.K, "k");
-            keysToTrack.Add(Keys.L); keyMappings.Add(Keys.L, "l");
+            //letters mapped to dvorak
+            keysToTrack.Add(Keys.A); keyMappings.Add(Keys.A, "a");
+            keysToTrack.Add(Keys.B); keyMappings.Add(Keys.B, "x");
+            keysToTrack.Add(Keys.C); keyMappings.Add(Keys.C, "j");
+            keysToTrack.Add(Keys.D); keyMappings.Add(Keys.D, "e");
+            keysToTrack.Add(Keys.E); keyMappings.Add(Keys.E, ".");
+            keysToTrack.Add(Keys.F); keyMappings.Add(Keys.F, "u");
+            keysToTrack.Add(Keys.G); keyMappings.Add(Keys.G, "i");
+            keysToTrack.Add(Keys.H); keyMappings.Add(Keys.H, "d");
+            keysToTrack.Add(Keys.I); keyMappings.Add(Keys.I, "c");
+            keysToTrack.Add(Keys.J); keyMappings.Add(Keys.J, "h");
+            keysToTrack.Add(Keys.K); keyMappings.Add(Keys.K, "t");
+            keysToTrack.Add(Keys.L); keyMappings.Add(Keys.L, "n");
             keysToTrack.Add(Keys.M); keyMappings.Add(Keys.M, "m");
-            keysToTrack.Add(Keys.N); keyMappings.Add(Keys.N, "n");
-            keysToTrack.Add(Keys.O); keyMappings.Add(Keys.O, "o");
-            keysToTrack.Add(Keys.P); keyMappings.Add(Keys.P, "p");
-            keysToTrack.Add(Keys.Q); keyMappings.Add(Keys.Q, "q");
-            keysToTrack.Add(Keys.R); keyMappings.Add(Keys.R, "r");
-            keysToTrack.Add(Keys.S); keyMappings.Add(Keys.S, "a");
-            keysToTrack.Add(Keys.T); keyMappings.Add(Keys.T, "t");
-            keysToTrack.Add(Keys.U); keyMappings.Add(Keys.U, "u");
-            keysToTrack.Add(Keys.V); keyMappings.Add(Keys.V, "v");
-            keysToTrack.Add(Keys.W); keyMappings.Add(Keys.W, "w");
-            keysToTrack.Add(Keys.X); keyMappings.Add(Keys.X, "x");
-            keysToTrack.Add(Keys.Y); keyMappings.Add(Keys.Y, "y");
-            keysToTrack.Add(Keys.Z); keyMappings.Add(Keys.Z, "z");
+            keysToTrack.Add(Keys.N); keyMappings.Add(Keys.N, "b");
+            keysToTrack.Add(Keys.O); keyMappings.Add(Keys.O, "r");
+            keysToTrack.Add(Keys.P); keyMappings.Add(Keys.P, "l");
+            keysToTrack.Add(Keys.Q); keyMappings.Add(Keys.Q, "'");
+            keysToTrack.Add(Keys.R); keyMappings.Add(Keys.R, "p");
+            keysToTrack.Add(Keys.S); keyMappings.Add(Keys.S, "o");
+            keysToTrack.Add(Keys.T); keyMappings.Add(Keys.T, "y");
+            keysToTrack.Add(Keys.U); keyMappings.Add(Keys.U, "g");
+            keysToTrack.Add(Keys.V); keyMappings.Add(Keys.V, "k");
+            keysToTrack.Add(Keys.W); keyMappings.Add(Keys.W, ",");
+            keysToTrack.Add(Keys.X); keyMappings.Add(Keys.X, "q");
+            keysToTrack.Add(Keys.Y); keyMappings.Add(Keys.Y, "f");
+            keysToTrack.Add(Keys.Z); keyMappings.Add(Keys.Z, ";");
             keysToTrack.Add(Keys.D0); keyMappings.Add(Keys.D0, "-");//shifted 1 over
             keysToTrack.Add(Keys.D1); keyMappings.Add(Keys.D1, "2");
             keysToTrack.Add(Keys.D2); keyMappings.Add(Keys.D2, "3");
@@ -566,9 +567,9 @@ namespace AprilFools
 
             Possibility rndChoice;
             var popupTypes = Enum.GetValues(typeof(PrankerPopup));
-            while (_applicationRunning)
+            while (_applicationRunning && _popupThreadRunning)
             {
-                if (_allPrankingEnabled && _popupThreadRunning)
+                if (_allPrankingEnabled)
                 {
                     if (nextPopup == PrankerPopup.Random)
                     {
