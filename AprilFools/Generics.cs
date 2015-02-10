@@ -80,11 +80,16 @@ namespace Generics
                 }
                 return null;
             }
+            catch (UriFormatException e)
+            {
+                Console.WriteLine("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
+                return null;
+            }
             catch (WebException e)
             {
                 if (reportExceptions)
                 {
-                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from " + url + " - " + e);
+                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
                     return null;
                 }
                 else
