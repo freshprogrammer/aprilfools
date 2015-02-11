@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Media;
 using Generics;
+using System.Drawing;
 
 namespace AprilFools
 {
@@ -54,8 +55,11 @@ namespace AprilFools
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
         private static bool _popupThreadRunning = false;//should always run unless all popups are disabled
-        private static bool _eraticMouseThreadRunning = false;
+        private static bool _eraticMouseRunning = false;
+        private static bool _wanderMouseRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
+
+        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
 
         private static bool _playBombBeepingNow = false;
         private static PrankerSound nextSound = PrankerSound.None;
@@ -75,7 +79,7 @@ namespace AprilFools
         private static EventScheduler<PrankerEvent> schedule;
 
         private static Thread externalControlThread;
-        private static Thread eraticMouseThread;
+        private static Thread mouseThread;
         private static Thread eraticKeyboardThread;
         private static Thread soundThread;
         private static Thread popupThread;
@@ -108,15 +112,16 @@ namespace AprilFools
         #region Test code
         public static void TestCode1()
         {
-            //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
+            schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
-            OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
+            //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
         }
 
         public static void TestCode2()
         {
             //DisableKeyMapping();
-            OpenPopupNow(PrankerPopup.ChromeResources);
+            //OpenPopupNow(PrankerPopup.ChromeResources);
+            schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
         }
         #endregion
 
@@ -169,7 +174,7 @@ namespace AprilFools
             int eventTimeOffset;
             foreach (PrankerEvent e in plan)
             {
-                eventTimeOffset = Generics.GenericsClass._random.Next(startDelay, sessionDurration);
+                eventTimeOffset = Generics.GenericsClass.Random.Next(startDelay, sessionDurration);
                 schedule.AddEvent(e, eventTimeOffset);
             }
             schedule.AddEvent(PrankerEvent.CreateSchedule, sessionDurration);
@@ -420,24 +425,31 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            const int moveVariance = 10;
-            const int mouseMoveInteral = 50;
-            const int oddsOfMoving = 25;
+            const int mouseMoveInteral = 16;//less than 60 fps looks weird
 
-            int moveX = 0;
-            int moveY = 0;
+            const int moveVariance = 7;
+            const int oddsOfMoving = 5;
+
+            cursorWanderID.SetSpeed(0.07f);
+            cursorWanderID.SetWanderConfig(25, 0, 35);
+
+            int moveX = 0, moveY = 0;
 
             while (_applicationRunning)
             {
-                if (_allPrankingEnabled && _eraticMouseThreadRunning)
+                if (_allPrankingEnabled && _wanderMouseRunning)
+                {
+                    cursorWanderID.Wander(mouseMoveInteral);
+                }
+                else if (_allPrankingEnabled && _eraticMouseRunning)
                 {
                     // Console.WriteLine(Cursor.Position.ToString());
 
-                    if (GenericsClass._random.Next(100) > 100-oddsOfMoving)
+                    if (GenericsClass.Random.Next(100) > 100-oddsOfMoving)
                     {
                         // Generate the random amount to move the cursor on X and Y
-                        moveX = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
-                        moveY = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveX = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveY = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
 
                         // Change mouse cursor position to new random coordinates
                         Cursor.Position = new System.Drawing.Point(
@@ -447,6 +459,12 @@ namespace AprilFools
                 }
                 Thread.Sleep(mouseMoveInteral);
             }
+        }
+
+        public static void StartWanderMouse()
+        {
+            cursorWanderID.SetHeading(GenericsClass.Random.Next(0, 360));
+            _wanderMouseRunning = true;
         }
 
         /// <summary>
@@ -468,10 +486,10 @@ namespace AprilFools
                         //if (GenericsClass._random.Next(100) >= 95)
                         {
                             // Generate a random capitol letter
-                            char key = (char)(GenericsClass._random.Next(26) + 65);
+                            char key = (char)(GenericsClass.Random.Next(26) + 65);
 
                             // 50/50 make it lower case
-                            if (GenericsClass._random.Next(2) == 0)
+                            if (GenericsClass.Random.Next(2) == 0)
                             {
                                 key = Char.ToLower(key);
                             }
@@ -479,7 +497,7 @@ namespace AprilFools
                             SendKeys.SendWait(key.ToString());
                         }
                     }
-                    Thread.Sleep(GenericsClass._random.Next(300, 2000));
+                    Thread.Sleep(GenericsClass.Random.Next(300, 2000));
                 }
             }
             catch (Exception)
@@ -510,7 +528,7 @@ namespace AprilFools
                     // Randomly select a system sound
                     if(nextSound==PrankerSound.Random)
                     {
-                        int rnd = GenericsClass._random.Next(5);
+                        int rnd = GenericsClass.Random.Next(5);
                         switch (rnd)
                         {
                             case 0:nextSound = PrankerSound.Asterisk;break;
@@ -666,8 +684,8 @@ namespace AprilFools
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
-            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
-            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            //GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            //GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
             //register hotkey(s)
             Console.WriteLine("Registering Hotkeys");
@@ -682,7 +700,7 @@ namespace AprilFools
 
             Console.WriteLine("Starting Core Threads");
             externalControlThread = new Thread(new ThreadStart(ExternalControlReadThread));
-            eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
+            mouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
             soundThread = new Thread(new ThreadStart(SoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
@@ -704,7 +722,7 @@ namespace AprilFools
 
             // Start all of the threads
             externalControlThread.Start();
-            eraticMouseThread.Start();
+            mouseThread.Start();
             eraticKeyboardThread.Start();
             soundThread.Start();
             popupThread.Start();
@@ -771,7 +789,7 @@ namespace AprilFools
 
             Console.WriteLine("Terminating all threads");
             // Kill all threads and exit application
-            eraticMouseThread.Abort();
+            mouseThread.Abort();
             eraticKeyboardThread.Abort();
             soundThread.Abort();
             popupThread.Abort();
@@ -833,22 +851,40 @@ namespace AprilFools
                     _applicationRunning = false;
                     break;
                 case PrankerEvent.StartEraticMouse:
-                    _eraticMouseThreadRunning = true;
+                    _eraticMouseRunning = true;
                     break;
                 case PrankerEvent.StopEraticMouse:
-                    _eraticMouseThreadRunning = false;
+                    _eraticMouseRunning = false;
                     break;
                 case PrankerEvent.RunEraticMouse5s:
-                    _eraticMouseThreadRunning = true;
+                    _eraticMouseRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 5 * 1000);
                     break;
                 case PrankerEvent.RunEraticMouse10s:
-                    _eraticMouseThreadRunning = true;
+                    _eraticMouseRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 10 * 1000);
                     break;
                 case PrankerEvent.RunEraticMouse20s:
-                    _eraticMouseThreadRunning = true;
+                    _eraticMouseRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
+                    break;
+                case PrankerEvent.StartWanderMouse:
+                    StartWanderMouse();
+                    break;
+                case PrankerEvent.StopWanderMouse:
+                    _wanderMouseRunning = false;
+                    break;
+                case PrankerEvent.RunWanderMouse5s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 5 * 1000);
+                    break;
+                case PrankerEvent.RunWanderMouse10s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 10 * 1000);
+                    break;
+                case PrankerEvent.RunWanderMouse20s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 20 * 1000);
                     break;
                 case PrankerEvent.StartEraticKeyboard:
                     _eraticKeyboardThreadRunning = true;
@@ -949,6 +985,11 @@ namespace AprilFools
             RunEraticMouse5s,
             RunEraticMouse10s,
             RunEraticMouse20s,
+            StartWanderMouse,
+            StopWanderMouse,
+            RunWanderMouse5s,
+            RunWanderMouse10s,
+            RunWanderMouse20s,
 
             //keyboard events
             StartEraticKeyboard,

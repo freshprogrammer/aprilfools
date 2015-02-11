@@ -46,6 +46,9 @@
 		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
 		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
 		if(GetInput("EraticM20")==="Y") 	AppendCmd("RunEraticMouse20s");
+		if(GetInput("WanderM5")==="Y") 		AppendCmd("RunWanderMouse5s");
+		if(GetInput("WanderM10")==="Y") 	AppendCmd("RunWanderMouse10s");
+		if(GetInput("WanderM20")==="Y") 	AppendCmd("RunWanderMouse20s");
 		if(GetInput("EraticK5")==="Y") 		AppendCmd("RunEraticKeyboard5s");
 		if(GetInput("EraticK10")==="Y") 	AppendCmd("RunEraticKeyboard10s");
 		if(GetInput("EraticK20")==="Y") 	AppendCmd("RunEraticKeyboard20s");
@@ -70,10 +73,13 @@
 		CreateAControlButton("Clear schedule","Clear");
 		CreateAControlButton("Eratic mouse 5s","EraticM5");
 		CreateAControlButton("Eratic mouse 10s","EraticM10");
-		CreateAControlButton("Eratic mouse 20s","EraticM20");
+		//CreateAControlButton("Eratic mouse 20s","EraticM20");
+		CreateAControlButton("Wander mouse 5s","WanderM5");
+		CreateAControlButton("Wander mouse 10s","WanderM10");
+		//CreateAControlButton("Wander mouse 20s","WanderM20");
 		CreateAControlButton("Rnd keys 5s","EraticK5");
 		CreateAControlButton("Rnd keys 10s","EraticK10");
-		CreateAControlButton("Rnd keys 20s","EraticK20");
+		//CreateAControlButton("Rnd keys 20s","EraticK20");
 		CreateAControlButton("Map next key"   ,"Map1k");
 		CreateAControlButton("Map next 5 keys"   ,"Map5k");
 		CreateAControlButton("Map next 10 keys"   ,"Map10k");
