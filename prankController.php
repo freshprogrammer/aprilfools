@@ -37,24 +37,59 @@
 		//process button commands
 		//this must match the handle input function as well as the PrankerEvent enum names in the app code
 		//these must be else ifs so it is limited to 1 new cmd 
-		if(GetInput("Cancel")==="Y") 	AppendCmd("CancelAllNewComands");
-		if(GetInput("Kill")==="Y") 		AppendCmd("KillApplication");
-		if(GetInput("Pause")==="Y") 	AppendCmd("PausePranking");
-		if(GetInput("Bomb")==="Y") 		AppendCmd("PlayBombBeeping");
-		if(GetInput("Rebuild")==="Y") 	AppendCmd("RebuildSchedule");
-		if(GetInput("Clear")==="Y") 	AppendCmd("ClearSchedule");
+		if(GetInput("Cancel")==="Y") 		AppendCmd("CancelAllNewComands");
+		if(GetInput("Kill")==="Y") 			AppendCmd("KillApplication");
+		if(GetInput("Pause")==="Y") 		AppendCmd("PausePranking");
+		if(GetInput("Bomb")==="Y") 			AppendCmd("PlayBombBeeping");
+		if(GetInput("Rebuild")==="Y") 		AppendCmd("RebuildSchedule");
+		if(GetInput("Clear")==="Y") 		AppendCmd("ClearSchedule");
+		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
+		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
+		if(GetInput("EraticM20")==="Y") 	AppendCmd("RunEraticMouse20s");
+		if(GetInput("WanderM5")==="Y") 		AppendCmd("RunWanderMouse5s");
+		if(GetInput("WanderM10")==="Y") 	AppendCmd("RunWanderMouse10s");
+		if(GetInput("WanderM20")==="Y") 	AppendCmd("RunWanderMouse20s");
+		if(GetInput("EraticK5")==="Y") 		AppendCmd("RunEraticKeyboard5s");
+		if(GetInput("EraticK10")==="Y") 	AppendCmd("RunEraticKeyboard10s");
+		if(GetInput("EraticK20")==="Y") 	AppendCmd("RunEraticKeyboard20s");
+		if(GetInput("Map1k")==="Y") 		AppendCmd("MapNext1Key");
+		if(GetInput("Map5k")==="Y") 		AppendCmd("MapNext5Keys");
+		if(GetInput("Map10k")==="Y") 		AppendCmd("MapNext10Keys");
+		if(GetInput("RandomPopup")==="Y")	AppendCmd("CreateRandomPopup");
+		if(GetInput("Play_A")==="Y")		AppendCmd("PlaySound_Asterisk");
+		if(GetInput("Play_B")==="Y")		AppendCmd("PlaySound_Beep");
+		if(GetInput("Play_E")==="Y")		AppendCmd("PlaySound_Exclamation");
+		if(GetInput("Play_H")==="Y")		AppendCmd("PlaySound_Hand");
+		if(GetInput("Play_Q")==="Y")		AppendCmd("PlaySound_Question");
 	}
 	
 	function CreateControlButtons()
 	{
 		//this must match the handle input function
-		CreateAControlButton("Refresh","");
 		CreateAControlButton("Cancel","Cancel");
 		CreateAControlButton("Kill","Kill","Y", true);
 		CreateAControlButton("Pause","Pause");
-		//CreateAControlButton("Bomb Beep","Bomb");
-		CreateAControlButton("Rebuild Schedule","Rebuild");
-		CreateAControlButton("Clear Schedule","Clear");
+		CreateAControlButton("Rebuild schedule","Rebuild");
+		CreateAControlButton("Clear schedule","Clear");
+		CreateAControlButton("Eratic mouse 5s","EraticM5");
+		CreateAControlButton("Eratic mouse 10s","EraticM10");
+		//CreateAControlButton("Eratic mouse 20s","EraticM20");
+		CreateAControlButton("Wander mouse 5s","WanderM5");
+		CreateAControlButton("Wander mouse 10s","WanderM10");
+		//CreateAControlButton("Wander mouse 20s","WanderM20");
+		CreateAControlButton("Rnd keys 5s","EraticK5");
+		CreateAControlButton("Rnd keys 10s","EraticK10");
+		//CreateAControlButton("Rnd keys 20s","EraticK20");
+		CreateAControlButton("Map next key"   ,"Map1k");
+		CreateAControlButton("Map next 5 keys"   ,"Map5k");
+		CreateAControlButton("Map next 10 keys"   ,"Map10k");
+		//CreateAControlButton("Random popup","RandomPopup");
+		CreateAControlButton("Play asterisk"   ,"Play_A");
+		CreateAControlButton("Play beep"       ,"Play_B");
+		CreateAControlButton("Play exclamation","Play_E");
+		CreateAControlButton("Play hand"       ,"Play_H");
+		//CreateAControlButton("Play question"   ,"Play_Q");//doesnt work
+		//CreateAControlButton("Bomb beep","Bomb");
 	}
 	
 	function BuildPage()
@@ -69,6 +104,7 @@
 		echo $curSchedule;
 		echo "\nEND_CMDS-->\n";
 		echo "<div>\n";
+		echo "<a href=".">Refresh</a>\n";
 		CreateControlButtons();
 		echo "<hr>\n";
 		echo "</div>\n";
@@ -83,9 +119,9 @@
 	function CreateAControlButton($dispName,$fieldName,$value='Y',$confirm=false)
 	{
 		if($confirm)
-			echo "	<form name='' action='' method=get style='display: inline-block;' onsubmit=\"return confirm('Are you sure you want to do this?')\">\n";
+			echo "	<form name='' action='' method=post style='display: inline-block;' onsubmit=\"return confirm('Are you sure you want to do this?')\">\n";
 		else
-			echo "	<form name='' action='' method=get style='display: inline-block;'>\n";
+			echo "	<form name='' action='' method=post style='display: inline-block;'>\n";
 		echo "	<input type='submit' value='$dispName'>\n";
 		echo "	<input type='hidden'  name='$fieldName' value='$value'>\n";
 		echo "	</form>\n";

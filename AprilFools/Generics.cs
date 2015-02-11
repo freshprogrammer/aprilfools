@@ -6,12 +6,13 @@ using System.Threading;
 using System.Net;
 using System.IO;
 using System.Text;
+using System.Drawing;
 
 namespace Generics
 {
     public class GenericsClass
     {
-        public static Random _random = new Random();
+        public static Random Random = new Random();
 
         #region Beeps vaiables and functions
         public static void Beep(BeepPitch p, BeepDurration d)   { Beep((int)p, (int)d); }
@@ -80,16 +81,117 @@ namespace Generics
                 }
                 return null;
             }
+            catch (UriFormatException e)
+            {
+                Console.WriteLine("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
+                return null;
+            }
             catch (WebException e)
             {
                 if (reportExceptions)
                 {
-                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from " + url + " - " + e);
+                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
                     return null;
                 }
                 else
                     throw e;
             }
+        }
+        #endregion
+
+        #region Math
+        public static double DegreesToRadians(double angleInDegrees)
+        {
+            return angleInDegrees * Math.PI / 180;
+        }
+
+        public static double RadiansToDegrees(double angleInRadians)
+        {
+            return angleInRadians * 180 / Math.PI;
+        }
+
+        /// <summary>
+        /// Calculates angle from Point 1, to Point 2. Result returned in degrees
+        /// </summary>
+        /// <param name="x1">X cord of Point 1</param>
+        /// <param name="y1">Y cord of Point 1</param>
+        /// <param name="x2">X cord of Point 2</param>
+        /// <param name="y2">Y cord of Point 2</param>
+        /// <returns>Resulting angle in degrees</returns>
+        public static float CalcHeading(float x1, float y1, float x2, float y2, bool degrees, bool cartesian)
+        {
+            if (x1 == x2 && y1 == y2)
+                return 0;
+
+            float xDist = x2 - x1;
+            float yDist = y2 - y1;
+
+            float xDif = Math.Abs(xDist);
+            float yDif = Math.Abs(yDist);
+
+            float result;
+            if (degrees)
+                result = (float)(Math.Atan(yDif / xDif) * 180 / Math.PI);
+            else
+                result = (float)Math.Atan(yDif / xDif);
+
+            if (cartesian)
+                result = ConvertAngleToCartersian(xDist, yDist, result, degrees);
+
+            return result;
+        }
+
+        /// <summary>
+        /// Converts angle where 0=Up and counter-clockwise to 0=Right and  clockwise.
+        /// </summary>
+        /// <param name="xDelta">xDir</param>
+        /// <param name="yDelta">yDir</param>
+        /// <param name="angle">current Angle</param>
+        /// <param name="degrees">True for degrees, false for radians</param>
+        /// <returns>new anlge</returns>
+        public static float ConvertAngleToCartersian(float xDelta, float yDelta, float angle, bool degrees)
+        {
+            double quarterTurn;
+            if (degrees)
+                quarterTurn = 90;
+            else
+                quarterTurn = Math.PI / 2;
+
+            double result = angle;
+            if (yDelta < 0)
+            {
+                if (xDelta < 0)
+                {
+                    //System.out.println("Q3");
+                    //quadrent 3
+                    result += quarterTurn * 3;
+                }
+                else
+                {
+                    //System.out.println("Q4");
+                    //quadrent 4
+
+                    result = quarterTurn - angle;
+                    //perfect already
+                }
+            }
+            else
+            {
+                if (xDelta < 0)
+                {
+                    //System.out.println("Q2");
+                    //quadrent 2
+                    result = quarterTurn - angle;
+                    result += quarterTurn * 2;
+                }
+                else
+                {
+                    //System.out.println("Q1");
+                    //quadrent 1
+                    result += quarterTurn * 1;
+                }
+            }
+            return (float)result;
         }
         #endregion
     }
@@ -301,7 +403,7 @@ namespace Generics
 
         public Possibility RandomChoice()
         {
-            float val = (float)(GenericsClass._random.NextDouble() * TotalWeight);
+            float val = (float)(GenericsClass.Random.NextDouble() * TotalWeight);
             return GetChoice(val);
         }
 
@@ -334,7 +436,7 @@ namespace Generics
 
         public static bool SingleChoice(Possibility pos)
         {
-            float val = (float)(GenericsClass._random.NextDouble() * 1);
+            float val = (float)(GenericsClass.Random.NextDouble() * 1);
             return val < pos.Weight;
         }
 
@@ -509,6 +611,229 @@ namespace Generics
             //update to show time if today, and time+date if not
             //string timeString = 
             return "ScheduledEvent(" + Event + " at " + Time + ")";
+        }
+    }
+    #endregion
+
+    #region Math Classes
+    public struct Vector2
+    {
+        public float X;
+        public float Y;
+
+        public Vector2(float x, float y)
+        {
+            this.X = x;
+            this.Y = y;
+        }
+
+        public static Vector2 operator +(Vector2 v1, Vector2 v2)
+        {
+            return new Vector2(v1.X + v2.X, v1.Y + v2.Y);
+        }
+
+        public static Vector2 operator -(Vector2 v1, Vector2 v2)
+        {
+            return new Vector2(v1.X - v2.X, v1.Y - v2.Y);
+        }
+
+        public static Vector2 operator *(Vector2 v1, float m)
+        {
+            return new Vector2(v1.X * m, v1.Y * m);
+        }
+
+        public static float operator *(Vector2 v1, Vector2 v2)
+        {
+            return v1.X * v2.X + v1.Y * v2.Y;
+        }
+
+        public static Vector2 operator /(Vector2 v1, float m)
+        {
+            return new Vector2(v1.X / m, v1.Y / m);
+        }
+
+        public static float Distance(Vector2 v1, Vector2 v2)
+        {
+            return (float)Math.Sqrt(Math.Pow(v1.X - v2.X, 2) + Math.Pow(v1.Y - v2.Y, 2));
+        }
+
+        public float Length()
+        {
+            return (float)Math.Sqrt(X * X + Y * Y);
+        }
+    }
+    #endregion
+
+    #region WanderCursor
+    
+    public class CursorWanderAI
+    {
+        private const int touchingCloseness = 4;
+        private const int updatesBetweenJitter = 1;
+        private int cycle = updatesBetweenJitter - 1;
+
+        protected float speed = 0;
+        private float heading = 90;
+        private float lastJitterHeading;
+        private float targetRadius = 30;
+        private float targetDistance = 12;
+        private float targetMaxJitter = 5;
+
+        public static Rectangle ScreenBounds { get; set; }
+
+        public bool BouceOnBounds = false;
+
+        /// <summary>
+        /// calc giant square from top left to bottom right
+        /// </summary>
+        public static void CalcSceenBounds()
+        {
+            int x = 0, y = 0, right = 0, bottom = 0;
+            foreach (Screen s in Screen.AllScreens)
+            {
+                if (s.Bounds.Height > bottom) bottom = s.Bounds.Height;
+                if (s.Bounds.Width > right) right = s.Bounds.Width;
+                if (s.Bounds.X < x) x = s.Bounds.X;
+                if (s.Bounds.Y < y) y = s.Bounds.Y;
+            }
+            ScreenBounds = new Rectangle(x, y, right - x, bottom - y);
+        }
+
+        public CursorWanderAI()
+        {
+            speed = 0;
+            SetHeading(0);
+            CalcSceenBounds();
+        }
+
+        public CursorWanderAI(float speed, float startHeading)
+        {
+            this.speed = speed;
+            SetHeading(startHeading);
+            CalcSceenBounds();
+        }
+
+        public void Wander(float delta)
+        {
+            Vector2 pos = new Vector2(Cursor.Position.X, Cursor.Position.Y);
+            cycle++;
+            if (cycle == updatesBetweenJitter)
+            {
+                cycle = 0;
+                // SHOULDFIX adjust this code to not convert to/from degrees to
+                // radians - if slow
+                float targetJitter = (float)(GenericsClass.Random.NextDouble() * targetMaxJitter * 2 - targetMaxJitter);
+                lastJitterHeading += targetJitter;
+                lastJitterHeading %= 360;
+                // dif to jitter on circle around object
+                float jitterX1 = (float)(pos.X + Math.Sin((180 - lastJitterHeading) * Math.PI / 180) * targetRadius);
+                float jitterY1 = (float)(pos.Y + Math.Cos((180 - lastJitterHeading) * Math.PI / 180) * targetRadius);
+                // dif to jitter on circle around ant - shifted along current
+                // heading
+                float jitterX2 = (float)(jitterX1 + Math.Sin((180 - heading) * Math.PI / 180) * targetDistance);
+                float jitterY2 = (float)(jitterY1 + Math.Cos((180 - heading) * Math.PI / 180) * targetDistance);
+
+                float newHeading = GenericsClass.CalcHeading(pos.X, pos.Y, jitterX2, jitterY2, true, true);
+                SetHeading(newHeading);
+            }
+            MoveCursorByHeading(delta, BouceOnBounds);
+        }
+
+        protected void MoveCursorByHeading(float delta, bool bounceEnabled=true)
+        {
+            // move by heading
+            Vector2 origin = new Vector2(Cursor.Position.X, Cursor.Position.Y);
+            float xSpeed = (float)(Math.Sin((180 - heading) * Math.PI / 180) * speed * delta);
+            float ySpeed = (float)(Math.Cos((180 - heading) * Math.PI / 180) * speed * delta);
+            
+            float newX = origin.X + xSpeed;
+            float newY = origin.Y + ySpeed;
+            if (bounceEnabled)
+            {
+                bool hitWall = false;
+                float normalAngle = 0;
+
+                if (xSpeed > 0 && CursorTouchingRightWall())
+                {
+                    normalAngle = 0;
+                    hitWall = true;
+                }
+                else if (xSpeed < 0 && CursorTouchingLeftWall())
+                {
+                    normalAngle = 180;
+                    hitWall = true;
+                }
+                if (ySpeed > 0 && CursorTouchingBottomWall())
+                {
+                    normalAngle = 90;
+                    hitWall = true;
+                }
+                else if (ySpeed < 0 && CursorTouchingTopWall())
+                {
+                    normalAngle = 270;
+                    hitWall = true;
+                }
+
+                if (hitWall)
+                {
+                    //TODO evaluate this code - flipping twice???
+                    SetHeading((float)Bounce(heading, normalAngle));
+                    FlipHeading();
+                }
+            }
+            Cursor.Position = new System.Drawing.Point((int)newX, (int)newY);
+        }
+
+        public static bool CursorTouchingRightWall()
+        {
+            return (ScreenBounds.Right - Cursor.Position.X) < touchingCloseness;
+        }
+
+        public static bool CursorTouchingLeftWall()
+        {
+            return (Cursor.Position.X - ScreenBounds.Left) < touchingCloseness;
+        }
+
+        public static bool CursorTouchingTopWall()
+        {
+            return (Cursor.Position.Y - ScreenBounds.Top) < touchingCloseness;
+        }
+
+        public static bool CursorTouchingBottomWall()
+        {
+            return (ScreenBounds.Bottom - Cursor.Position.Y) < touchingCloseness;
+        }
+
+        public static double Bounce(float headingAngle, float normalAngle)
+        {
+            double h = GenericsClass.DegreesToRadians(headingAngle);
+            double n = GenericsClass.DegreesToRadians(normalAngle);
+            double r = n + (n - ((h + Math.PI) % (2 * Math.PI)));
+            return GenericsClass.RadiansToDegrees(r);
+            // return (float)(normalAngle+(normalAngle-(headingAngle+180)));
+        }
+
+        public void FlipHeading()
+        {
+            SetHeading(heading + 180);
+        }
+
+        public void SetHeading(float headingDegrees)
+        {
+            heading = headingDegrees % 360;
+            lastJitterHeading = heading;
+        }
+
+        public void SetWanderConfig(float targetRadius, float targetDistance, float targetMaxJitter)
+        {
+            this.targetRadius = targetRadius;
+            this.targetDistance = targetDistance;
+            this.targetMaxJitter = targetMaxJitter;
+        }
+
+        public void SetSpeed(float speed)
+        {
+            this.speed = speed;
         }
     }
     #endregion
