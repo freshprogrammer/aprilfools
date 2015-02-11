@@ -49,7 +49,7 @@ namespace AprilFools
         /// <summary>sleep time for main thread</summary>
         private const int _mainThreadPollingInterval = 50;
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
-        private const int _externalControlThreadPollingInterval = 5*1000;
+        private const int _externalControlThreadPollingInterval = 3*1000;
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled

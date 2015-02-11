@@ -66,24 +66,24 @@
 		CreateAControlButton("Cancel","Cancel");
 		CreateAControlButton("Kill","Kill","Y", true);
 		CreateAControlButton("Pause","Pause");
-		CreateAControlButton("Rebuild Schedule","Rebuild");
-		CreateAControlButton("Clear Schedule","Clear");
-		CreateAControlButton("Eratic Mouse 5s","EraticM5");
-		CreateAControlButton("Eratic Mouse 10s","EraticM10");
-		CreateAControlButton("Eratic Mouse 20s","EraticM20");
-		CreateAControlButton("Eratic Keys 5s","EraticK5");
-		CreateAControlButton("Eratic Keys 10s","EraticK10");
-		CreateAControlButton("Eratic Keys 20s","EraticK20");
-		CreateAControlButton("Map next 1 Keys"   ,"Map1k");
-		CreateAControlButton("Map next 5 Keys"   ,"Map5k");
-		CreateAControlButton("Map next 10 Keys"   ,"Map10k");
-		//CreateAControlButton("Random Popup","RandomPopup");
-		CreateAControlButton("Play Asterisk"   ,"Play_A");
-		CreateAControlButton("Play Beep"       ,"Play_B");
-		CreateAControlButton("Play Exclamation","Play_E");
-		CreateAControlButton("Play Hand"       ,"Play_H");
-		CreateAControlButton("Play Question"   ,"Play_Q");
-		//CreateAControlButton("Bomb Beep","Bomb");
+		CreateAControlButton("Rebuild schedule","Rebuild");
+		CreateAControlButton("Clear schedule","Clear");
+		CreateAControlButton("Eratic mouse 5s","EraticM5");
+		CreateAControlButton("Eratic mouse 10s","EraticM10");
+		CreateAControlButton("Eratic mouse 20s","EraticM20");
+		CreateAControlButton("Rnd keys 5s","EraticK5");
+		CreateAControlButton("Rnd keys 10s","EraticK10");
+		CreateAControlButton("Rnd keys 20s","EraticK20");
+		CreateAControlButton("Map next key"   ,"Map1k");
+		CreateAControlButton("Map next 5 keys"   ,"Map5k");
+		CreateAControlButton("Map next 10 keys"   ,"Map10k");
+		//CreateAControlButton("Random popup","RandomPopup");
+		CreateAControlButton("Play asterisk"   ,"Play_A");
+		CreateAControlButton("Play beep"       ,"Play_B");
+		CreateAControlButton("Play exclamation","Play_E");
+		CreateAControlButton("Play hand"       ,"Play_H");
+		//CreateAControlButton("Play question"   ,"Play_Q");//doesnt work
+		//CreateAControlButton("Bomb beep","Bomb");
 	}
 	
 	function BuildPage()
