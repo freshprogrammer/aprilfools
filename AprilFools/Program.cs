@@ -53,7 +53,7 @@ namespace AprilFools
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
-        private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
+        private static bool _popupThreadRunning = false;//should always run unless all popups are disabled
         private static bool _eraticMouseThreadRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
 
@@ -898,6 +898,9 @@ namespace AprilFools
                 case PrankerEvent.StopMappingAllKeys:
                     DisableKeyMapping();
                     break;
+                case PrankerEvent.MapNext1Key:
+                    EnableKeyMapping(1);
+                    break;
                 case PrankerEvent.MapNext5Keys:
                     EnableKeyMapping(5);
                     break;
@@ -955,6 +958,7 @@ namespace AprilFools
             RunEraticKeyboard20s,
             StartMappingAllKeys,
             StopMappingAllKeys,
+            MapNext1Key,
             MapNext5Keys,
             MapNext10Keys,
 

@@ -49,6 +49,7 @@
 		if(GetInput("EraticK5")==="Y") 		AppendCmd("RunEraticKeyboard5s");
 		if(GetInput("EraticK10")==="Y") 	AppendCmd("RunEraticKeyboard10s");
 		if(GetInput("EraticK20")==="Y") 	AppendCmd("RunEraticKeyboard20s");
+		if(GetInput("Map1k")==="Y") 		AppendCmd("MapNext1Key");
 		if(GetInput("Map5k")==="Y") 		AppendCmd("MapNext5Keys");
 		if(GetInput("Map10k")==="Y") 		AppendCmd("MapNext10Keys");
 		if(GetInput("RandomPopup")==="Y")	AppendCmd("CreateRandomPopup");
@@ -70,12 +71,13 @@
 		CreateAControlButton("Eratic Mouse 5s","EraticM5");
 		CreateAControlButton("Eratic Mouse 10s","EraticM10");
 		CreateAControlButton("Eratic Mouse 20s","EraticM20");
-		CreateAControlButton("Eratic Keyboard 5s","EraticK5");
-		CreateAControlButton("Eratic Keyboard 10s","EraticK10");
-		CreateAControlButton("Eratic Keyboard 20s","EraticK20");
+		CreateAControlButton("Eratic Keys 5s","EraticK5");
+		CreateAControlButton("Eratic Keys 10s","EraticK10");
+		CreateAControlButton("Eratic Keys 20s","EraticK20");
+		CreateAControlButton("Map next 1 Keys"   ,"Map1k");
 		CreateAControlButton("Map next 5 Keys"   ,"Map5k");
 		CreateAControlButton("Map next 10 Keys"   ,"Map10k");
-		CreateAControlButton("Random Popup","RandomPopup");
+		//CreateAControlButton("Random Popup","RandomPopup");
 		CreateAControlButton("Play Asterisk"   ,"Play_A");
 		CreateAControlButton("Play Beep"       ,"Play_B");
 		CreateAControlButton("Play Exclamation","Play_E");
