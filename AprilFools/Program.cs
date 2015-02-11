@@ -125,7 +125,7 @@ namespace AprilFools
         }
         #endregion
 
-        #region Session setup
+        #region Session and schedule setup
         /// <summary>
         /// This funtion will setup which events will occur in the next 12 hours, then call its self to setup the next 12.
         /// </summary>
@@ -133,40 +133,45 @@ namespace AprilFools
         /// <param name="sessionDurration">Default durration is 8 hours</param>
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
-        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.SuperEasyDay, 
+        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.SuperEasy, 
             int sessionDurration = sessionDefaultDurration, 
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
         {
             List<PrankerEvent> plan = new List<PrankerEvent>(5);
-
+            schedule.ClearSchedule();
+            
             switch (scheduleType)
             {
-                case PrankerSchedule.SuperEasyDay:
-                    plan.Add(PrankerEvent.CreateRandomPopup);
+                case PrankerSchedule.SuperEasy:
+                    if(_popupThreadRunning)plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
-                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_SuperEasy, sessionDurration);
                     break;
-                case PrankerSchedule.EasyDay:
-                    plan.Add(PrankerEvent.CreateRandomPopup);
-                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                case PrankerSchedule.Easy:
+                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
+                    plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Easy, sessionDurration);
                     break;
-                case PrankerSchedule.MediumDay:
-                    plan.Add(PrankerEvent.CreateRandomPopup);
-                    plan.Add(PrankerEvent.CreateRandomPopup);
-                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                case PrankerSchedule.Medium:
+                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
+                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
+                    plan.Add(PrankerEvent.RunWanderMouse5s);
+                    plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
             }
 
@@ -177,14 +182,13 @@ namespace AprilFools
                 eventTimeOffset = Generics.GenericsClass.Random.Next(startDelay, sessionDurration);
                 schedule.AddEvent(e, eventTimeOffset);
             }
-            schedule.AddEvent(PrankerEvent.CreateSchedule, sessionDurration);
         }
 
         public enum PrankerSchedule
         {
-            SuperEasyDay,
-            EasyDay,
-            MediumDay,
+            SuperEasy,
+            Easy,
+            Medium,
         }
         #endregion
 
@@ -715,7 +719,7 @@ namespace AprilFools
                 schedule.AddEvent(PrankerEvent.StartPranking, startDelay * 1000);
             }
 
-            CreateSchedule(PrankerSchedule.EasyDay, sessionDefaultDurration, true, sessionDefaultStartDelay);
+            CreateSchedule(PrankerSchedule.SuperEasy, sessionDefaultDurration, true, sessionDefaultStartDelay);
 
             //upldoad initial schedule and clear outstanding scheduled cmds
             ReadFromCtrlWebPage(true);
@@ -943,12 +947,14 @@ namespace AprilFools
                 case PrankerEvent.MapNext10Keys:
                     EnableKeyMapping(10);
                     break;
-                case PrankerEvent.CreateSchedule:
-                    CreateSchedule();
+                case PrankerEvent.CreateSchedule_SuperEasy:
+                    CreateSchedule(PrankerSchedule.SuperEasy);
                     break;
-                case PrankerEvent.RebuildSchedule:
-                    schedule.ClearSchedule();
-                    CreateSchedule();
+                case PrankerEvent.CreateSchedule_Easy:
+                    CreateSchedule(PrankerSchedule.Easy);
+                    break;
+                case PrankerEvent.CreateSchedule_Medium:
+                    CreateSchedule(PrankerSchedule.Medium);
                     break;
                 case PrankerEvent.ClearSchedule:
                     schedule.ClearSchedule();
@@ -975,9 +981,10 @@ namespace AprilFools
             PausePranking,
             StartPranking,
 
-            CreateSchedule,
+            CreateSchedule_SuperEasy,
+            CreateSchedule_Easy,
+            CreateSchedule_Medium,
             ClearSchedule,
-            RebuildSchedule,
 
             //mouse events
             StartEraticMouse,

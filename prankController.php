@@ -41,7 +41,9 @@
 		if(GetInput("Kill")==="Y") 			AppendCmd("KillApplication");
 		if(GetInput("Pause")==="Y") 		AppendCmd("PausePranking");
 		if(GetInput("Bomb")==="Y") 			AppendCmd("PlayBombBeeping");
-		if(GetInput("Rebuild")==="Y") 		AppendCmd("RebuildSchedule");
+		if(GetInput("ScheduleSE")==="Y") 	AppendCmd("CreateSchedule_SuperEasy");
+		if(GetInput("ScheduleE")==="Y") 	AppendCmd("CreateSchedule_Easy");
+		if(GetInput("ScheduleM")==="Y") 	AppendCmd("CreateSchedule_Medium");
 		if(GetInput("Clear")==="Y") 		AppendCmd("ClearSchedule");
 		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
 		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
@@ -69,7 +71,9 @@
 		CreateAControlButton("Cancel","Cancel");
 		CreateAControlButton("Kill","Kill","Y", true);
 		CreateAControlButton("Pause","Pause");
-		CreateAControlButton("Rebuild schedule","Rebuild");
+		CreateAControlButton("XEasy schedule","ScheduleSE");
+		CreateAControlButton("Easy schedule","ScheduleE");
+		CreateAControlButton("Med schedule","ScheduleM");
 		CreateAControlButton("Clear schedule","Clear");
 		CreateAControlButton("Eratic mouse 5s","EraticM5");
 		CreateAControlButton("Eratic mouse 10s","EraticM10");
