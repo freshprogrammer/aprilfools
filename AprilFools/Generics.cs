@@ -194,6 +194,60 @@ namespace Generics
             return (float)result;
         }
         #endregion
+
+        #region Cursor Controls
+        public static Rectangle ScreenBounds { get; set; }
+
+        /// <summary>
+        /// calc giant square from top left to bottom right
+        /// </summary>
+        public static void CalcSceenBounds()
+        {
+            int x = 0, y = 0, right = 0, bottom = 0;
+            foreach (Screen s in Screen.AllScreens)
+            {
+                if (s.Bounds.Height > bottom) bottom = s.Bounds.Height;
+                if (s.Bounds.Width > right) right = s.Bounds.Width;
+                if (s.Bounds.X < x) x = s.Bounds.X;
+                if (s.Bounds.Y < y) y = s.Bounds.Y;
+            }
+            ScreenBounds = new Rectangle(x, y, right - x, bottom - y);
+        }
+
+        public static void MoveCursorToCorner(Corner c)
+        {
+            CalcSceenBounds();
+
+            if (c == Corner.Random)
+                c = (Corner)Random.Next(0, 4);
+
+            switch(c)
+            {
+                case Corner.TopLeft:
+                    Cursor.Position = new System.Drawing.Point(ScreenBounds.Left, ScreenBounds.Top);
+                    break;
+                case Corner.TopRight:
+                    Cursor.Position = new System.Drawing.Point(ScreenBounds.Right, ScreenBounds.Top);
+                    break;
+                case Corner.BottomLeft:
+                    Cursor.Position = new System.Drawing.Point(ScreenBounds.Left, ScreenBounds.Bottom);
+                    break;
+                case Corner.BottomRight:
+                    Cursor.Position = new System.Drawing.Point(ScreenBounds.Right, ScreenBounds.Bottom);
+                    break;
+            }
+
+        }
+
+        public enum Corner
+        {
+            TopLeft=0,
+            TopRight = 1,
+            BottomLeft = 2,
+            BottomRight = 3,
+            Random = -1,
+        }
+        #endregion
     }
 
     #region keyboard hooks
@@ -665,7 +719,6 @@ namespace Generics
     #endregion
 
     #region WanderCursor
-    
     public class CursorWanderAI
     {
         private const int touchingCloseness = 4;
@@ -679,38 +732,20 @@ namespace Generics
         private float targetDistance = 12;
         private float targetMaxJitter = 5;
 
-        public static Rectangle ScreenBounds { get; set; }
-
         public bool BouceOnBounds = false;
-
-        /// <summary>
-        /// calc giant square from top left to bottom right
-        /// </summary>
-        public static void CalcSceenBounds()
-        {
-            int x = 0, y = 0, right = 0, bottom = 0;
-            foreach (Screen s in Screen.AllScreens)
-            {
-                if (s.Bounds.Height > bottom) bottom = s.Bounds.Height;
-                if (s.Bounds.Width > right) right = s.Bounds.Width;
-                if (s.Bounds.X < x) x = s.Bounds.X;
-                if (s.Bounds.Y < y) y = s.Bounds.Y;
-            }
-            ScreenBounds = new Rectangle(x, y, right - x, bottom - y);
-        }
 
         public CursorWanderAI()
         {
             speed = 0;
             SetHeading(0);
-            CalcSceenBounds();
+            GenericsClass.CalcSceenBounds();
         }
 
         public CursorWanderAI(float speed, float startHeading)
         {
             this.speed = speed;
             SetHeading(startHeading);
-            CalcSceenBounds();
+            GenericsClass.CalcSceenBounds();
         }
 
         public void Wander(float delta)
@@ -786,22 +821,22 @@ namespace Generics
 
         public static bool CursorTouchingRightWall()
         {
-            return (ScreenBounds.Right - Cursor.Position.X) < touchingCloseness;
+            return (GenericsClass.ScreenBounds.Right - Cursor.Position.X) < touchingCloseness;
         }
 
         public static bool CursorTouchingLeftWall()
         {
-            return (Cursor.Position.X - ScreenBounds.Left) < touchingCloseness;
+            return (Cursor.Position.X - GenericsClass.ScreenBounds.Left) < touchingCloseness;
         }
 
         public static bool CursorTouchingTopWall()
         {
-            return (Cursor.Position.Y - ScreenBounds.Top) < touchingCloseness;
+            return (Cursor.Position.Y - GenericsClass.ScreenBounds.Top) < touchingCloseness;
         }
 
         public static bool CursorTouchingBottomWall()
         {
-            return (ScreenBounds.Bottom - Cursor.Position.Y) < touchingCloseness;
+            return (GenericsClass.ScreenBounds.Bottom - Cursor.Position.Y) < touchingCloseness;
         }
 
         public static double Bounce(float headingAngle, float normalAngle)

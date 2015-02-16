@@ -6,6 +6,7 @@ Starts silently and runs in background. Automatically creates a random schedule 
 - Random keys pressed for X seconds
 - Erratic mouse movement for X seconds
 - Wander mouse AI for X seconds
+- Move Cursor to random corner of screen
 - Bogus popups
 - Random sounds
 - Map next X keys to other keys
