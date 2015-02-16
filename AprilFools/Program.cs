@@ -25,7 +25,6 @@ namespace AprilFools
      * Alt+Shfit+2 Test Button - only runs in test mode
      * 
      * --ideas
-     * move cursor to random corners or locations
      * make noise/tone every hour
      * start odd windows (like ads) - should clear over time or at least limit only 1 persisting to prevent a log in attack
      *  - popup random error mssages for chrome & memmory
@@ -34,6 +33,7 @@ namespace AprilFools
      * hide desktop icons - win+d -> cntxt->v->d -> win+d
      * 
      * --done
+     * move cursor to random corners or locations
      * Key swapper - swap keys around for a short period and/or clear after being pressed (dynamicly registering key hooks)
      * program wil launch and sit silently 
      * make a accelerating beeping noise perioticly
@@ -148,6 +148,8 @@ namespace AprilFools
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_SuperEasy, sessionDurration);
                     break;
                 case PrankerSchedule.Easy:
@@ -157,6 +159,10 @@ namespace AprilFools
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Easy, sessionDurration);
                     break;
                 case PrankerSchedule.Medium:
@@ -171,6 +177,14 @@ namespace AprilFools
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
             }
@@ -872,6 +886,9 @@ namespace AprilFools
                     _eraticMouseRunning = true;
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
                     break;
+                case PrankerEvent.MoveCursorToRandomCorner:
+                    GenericsClass.MoveCursorToCorner(GenericsClass.Corner.Random);
+                    break;
                 case PrankerEvent.StartWanderMouse:
                     StartWanderMouse();
                     break;
@@ -997,6 +1014,7 @@ namespace AprilFools
             RunWanderMouse5s,
             RunWanderMouse10s,
             RunWanderMouse20s,
+            MoveCursorToRandomCorner,
 
             //keyboard events
             StartEraticKeyboard,

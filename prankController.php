@@ -45,6 +45,7 @@
 		if(GetInput("ScheduleE")==="Y") 	AppendCmd("CreateSchedule_Easy");
 		if(GetInput("ScheduleM")==="Y") 	AppendCmd("CreateSchedule_Medium");
 		if(GetInput("Clear")==="Y") 		AppendCmd("ClearSchedule");
+		if(GetInput("HideCursor")==="Y") 	AppendCmd("MoveCursorToRandomCorner");
 		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
 		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
 		if(GetInput("EraticM20")==="Y") 	AppendCmd("RunEraticMouse20s");
@@ -68,32 +69,33 @@
 	function CreateControlButtons()
 	{
 		//this must match the handle input function
-		CreateAControlButton("Cancel","Cancel");
-		CreateAControlButton("Kill","Kill","Y", true);
-		CreateAControlButton("Pause","Pause");
-		CreateAControlButton("XEasy schedule","ScheduleSE");
-		CreateAControlButton("Easy schedule","ScheduleE");
-		CreateAControlButton("Med schedule","ScheduleM");
-		CreateAControlButton("Clear schedule","Clear");
-		CreateAControlButton("Eratic mouse 5s","EraticM5");
-		CreateAControlButton("Eratic mouse 10s","EraticM10");
+		CreateAControlButton("Cancel"			,"Cancel");
+		CreateAControlButton("Kill"				,"Kill","Y", true);
+		CreateAControlButton("Pause"			,"Pause");
+		CreateAControlButton("XEasy schedule"	,"ScheduleSE");
+		CreateAControlButton("Easy schedule"	,"ScheduleE");
+		CreateAControlButton("Med schedule"		,"ScheduleM");
+		CreateAControlButton("Clear schedule"	,"Clear");
+		CreateAControlButton("Hide Cursor"		,"HideCursor");
+		CreateAControlButton("Eratic mouse 5s"	,"EraticM5");
+		CreateAControlButton("Eratic mouse 10s"	,"EraticM10");
 		//CreateAControlButton("Eratic mouse 20s","EraticM20");
-		CreateAControlButton("Wander mouse 5s","WanderM5");
-		CreateAControlButton("Wander mouse 10s","WanderM10");
+		CreateAControlButton("Wander mouse 5s"	,"WanderM5");
+		CreateAControlButton("Wander mouse 10s"	,"WanderM10");
 		//CreateAControlButton("Wander mouse 20s","WanderM20");
-		CreateAControlButton("Rnd keys 5s","EraticK5");
-		CreateAControlButton("Rnd keys 10s","EraticK10");
-		//CreateAControlButton("Rnd keys 20s","EraticK20");
-		CreateAControlButton("Map next key"   ,"Map1k");
-		CreateAControlButton("Map next 5 keys"   ,"Map5k");
-		CreateAControlButton("Map next 10 keys"   ,"Map10k");
-		//CreateAControlButton("Random popup","RandomPopup");
-		CreateAControlButton("Play asterisk"   ,"Play_A");
-		CreateAControlButton("Play beep"       ,"Play_B");
-		CreateAControlButton("Play exclamation","Play_E");
-		CreateAControlButton("Play hand"       ,"Play_H");
+		CreateAControlButton("Rnd keys 5s"		,"EraticK5");
+		CreateAControlButton("Rnd keys 10s"		,"EraticK10");
+		//CreateAControlButton("Rnd keys 20s"	,"EraticK20");
+		CreateAControlButton("Map next key"		,"Map1k");
+		CreateAControlButton("Map next 5 keys"	,"Map5k");
+		CreateAControlButton("Map next 10 keys"	,"Map10k");
+		//CreateAControlButton("Random popup"		,"RandomPopup");
+		CreateAControlButton("Play asterisk"   	,"Play_A");
+		CreateAControlButton("Play beep"       	,"Play_B");
+		CreateAControlButton("Play exclamation"	,"Play_E");
+		CreateAControlButton("Play hand"       	,"Play_H");
 		//CreateAControlButton("Play question"   ,"Play_Q");//doesnt work
-		//CreateAControlButton("Bomb beep","Bomb");
+		//CreateAControlButton("Bomb beep"		,"Bomb");
 	}
 	
 	function BuildPage()
