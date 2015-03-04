@@ -3,14 +3,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+using System.Media;
 using System.Threading;
 using System.Windows.Forms;
-using System.Media;
 using Generics;
-using System.Drawing;
 
 namespace AprilFools
 {
@@ -69,8 +65,9 @@ namespace AprilFools
         public static List<Keys> keysToTrack = null;
         public static Dictionary<int, Keys> hotkeyIDs = null;
         public static Dictionary<Keys, string> keyMappings = null;
-        /// <summary>Number of Keys to Map. decriement each map untill 0 when key mapping is disabled. If this is -1 there is no limit</summary>
+        /// <summary>Number of Keys to Map. decriement each map untill 0 when key mapping is disabled.</summary>
         public static int keyMapCounter = 0;
+        public static bool keyMappingsActive = false;
 
         /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 25 min.</summary>
         const int sessionDefaultStartDelay = 25 * 60 * 1000;
@@ -359,13 +356,17 @@ namespace AprilFools
 
         public static void RegisterAllKeyMappings()
         {
-            DefineKeyMappings();
-
-            int id;
-            foreach (Keys k in keysToTrack)
+            if (!keyMappingsActive)
             {
-                id = HotKeyManager.RegisterHotKey(0, k);
-                hotkeyIDs[id] = k;
+                keyMappingsActive = true;
+                DefineKeyMappings();
+
+                int id;
+                foreach (Keys k in keysToTrack)
+                {
+                    id = HotKeyManager.RegisterHotKey(0, k);
+                    hotkeyIDs[id] = k;
+                }
             }
         }
 
@@ -379,6 +380,7 @@ namespace AprilFools
 
             hotkeyIDs = null;
             keyMappings = null;
+            keyMappingsActive = false;
         }
 
         public static bool MapKey(HotKeyEventArgs e)
@@ -389,7 +391,7 @@ namespace AprilFools
                 return mapped;
 
             Keys pressedKey;
-            if (hotkeyIDs.TryGetValue(e.ID,out pressedKey))
+            if (hotkeyIDs.TryGetValue(e.ID, out pressedKey))
             {
                 //map this key
                 string output = keyMappings[pressedKey];
@@ -400,27 +402,24 @@ namespace AprilFools
 
                 mapped = true;
 
-                if (keyMapCounter != -1)
-                {
-                    keyMapCounter--;
-                    if (keyMapCounter == 0)
-                        DisableKeyMapping();
-                }
+                keyMapCounter--;
+                if (keyMapCounter <= 0)
+                    DisableKeyMapping();
+            }
+            else
+            {
+                Console.WriteLine("MapKey(HotKeyEventArgs) - Failed");
             }
             return mapped;
         }
 
-        public static void EnableKeyMapping(int count=-1)
+        public static void EnableKeyMapping(int count)
         {
-            if (count < -1) count = -1;
+            if (count < 0) count = 0;
             else if (count == 0) { DisableKeyMapping(); return; }
 
-            //new setting is on - check if already on
-            if(keyMapCounter!=-1)
-            {
-                //enable hotkeys for mapping
-                RegisterAllKeyMappings();
-            }
+            //enable hotkeys for mapping
+            RegisterAllKeyMappings();
             keyMapCounter = count;
         }
 
@@ -844,7 +843,7 @@ namespace AprilFools
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2");
                 TestCode2();
             }
-            else if (keyMapCounter != 0 && !MapKey(e))//try to map this unknown key (combo are ignored)
+            else if (keyMapCounter != 0 && !MapKey(e))//try to map this unknown key (combos are ignored)
             {
                 //uncaught hotkey
                 Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
@@ -948,9 +947,6 @@ namespace AprilFools
                     break;
                 case PrankerEvent.CreateRandomPopup:
                     nextPopup = PrankerPopup.Random;
-                    break;
-                case PrankerEvent.StartMappingAllKeys:
-                    EnableKeyMapping();
                     break;
                 case PrankerEvent.StopMappingAllKeys:
                     DisableKeyMapping();
