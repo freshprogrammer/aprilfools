@@ -58,6 +58,7 @@
 		if(GetInput("Map1k")==="Y") 		AppendCmd("MapNext1Key");
 		if(GetInput("Map5k")==="Y") 		AppendCmd("MapNext5Keys");
 		if(GetInput("Map10k")==="Y") 		AppendCmd("MapNext10Keys");
+		if(GetInput("StopKeyMap")==="Y") 	AppendCmd("StopMappingAllKeys");
 		if(GetInput("RandomPopup")==="Y")	AppendCmd("CreateRandomPopup");
 		if(GetInput("Play_A")==="Y")		AppendCmd("PlaySound_Asterisk");
 		if(GetInput("Play_B")==="Y")		AppendCmd("PlaySound_Beep");
@@ -89,6 +90,7 @@
 		CreateAControlButton("Map next key"		,"Map1k");
 		CreateAControlButton("Map next 5 keys"	,"Map5k");
 		CreateAControlButton("Map next 10 keys"	,"Map10k");
+		CreateAControlButton("Stop mapping keys","StopKeyMap");
 		//CreateAControlButton("Random popup"		,"RandomPopup");
 		CreateAControlButton("Play asterisk"   	,"Play_A");
 		CreateAControlButton("Play beep"       	,"Play_B");
