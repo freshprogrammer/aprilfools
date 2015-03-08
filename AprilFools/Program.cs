@@ -218,8 +218,9 @@ namespace AprilFools
             }
         }
 
-        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=false)
+        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=true)
         {
+            //this is temperarily set to always report logs
             string pageUrl = ctrlWebPage;
 
             if (updateSchedule)
@@ -235,6 +236,7 @@ namespace AprilFools
 
         private static void ReadFromCtrlWebPage(bool firstRun=false)
         {
+            //GenericsClass.Log("ReadFromCtrlWebPage(" + firstRun + ")");
             string html = FetchCtrlPage();
 
             if (html != null)

@@ -250,20 +250,32 @@ namespace Generics
         #endregion
 
         #region LogData
-        public static void Log(string l)
+        private const int LogHistoryCount = 100;
+        private static List<string> logRecords = new List<string>(LogHistoryCount);
+        public static void Log(string log)
         {
             string timeStamp = DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss:ffff tt");
-            Console.WriteLine(timeStamp + "::" + l);
+            log = timeStamp + "::" + log;
+            AppendLog(log);
+            Console.WriteLine(log);
         }
 
         public static string GetLogData()
         {
-            return "";
+            string result = "";
+            foreach (string l in logRecords)
+            {
+                result += l + "\n";
+            }
+            return result.TrimEnd();
         }
 
-        private static void AppendLog(string l)
+        private static void AppendLog(string log)
         {
-
+            //not a great implementation but it works. Total waste of ReShuffleing RAM when full and removing
+            if (logRecords.Count == logRecords.Capacity)
+                logRecords.RemoveAt(0);
+            logRecords.Add(log);
         }
         #endregion
     }
