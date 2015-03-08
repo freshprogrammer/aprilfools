@@ -83,14 +83,14 @@ namespace Generics
             }
             catch (UriFormatException e)
             {
-                Console.WriteLine("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
+                GenericsClass.Log("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
                 return null;
             }
             catch (WebException e)
             {
                 if (reportExceptions)
                 {
-                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
+                    GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
                     return null;
                 }
                 else
@@ -246,6 +246,36 @@ namespace Generics
             BottomLeft = 2,
             BottomRight = 3,
             Random = -1,
+        }
+        #endregion
+
+        #region LogData
+        private const int LogHistoryCount = 100;
+        private static List<string> logRecords = new List<string>(LogHistoryCount);
+        public static void Log(string log)
+        {
+            string timeStamp = DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss:ffff tt");
+            log = timeStamp + "::" + log;
+            AppendLog(log);
+            Console.WriteLine(log);
+        }
+
+        public static string GetLogData()
+        {
+            string result = "";
+            foreach (string l in logRecords)
+            {
+                result += l + "\n";
+            }
+            return result.TrimEnd();
+        }
+
+        private static void AppendLog(string log)
+        {
+            //not a great implementation but it works. Total waste of ReShuffleing RAM when full and removing
+            if (logRecords.Count == logRecords.Capacity)
+                logRecords.RemoveAt(0);
+            logRecords.Add(log);
         }
         #endregion
     }
