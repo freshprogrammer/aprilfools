@@ -55,6 +55,9 @@ namespace AprilFools
         private static bool _wanderMouseRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
 
+        private const int TollerableExceptionCount = 3;
+        private static int exceptionCount = 0;
+
         private static CursorWanderAI cursorWanderID = new CursorWanderAI();
 
         private static bool _playBombBeepingNow = false;
@@ -213,8 +216,18 @@ namespace AprilFools
 
             while (_applicationRunning && _externalControlThreadRunning)
             {
-                ReadFromCtrlWebPage();
-                Thread.Sleep(_externalControlThreadPollingInterval);
+                try
+                {
+                    ReadFromCtrlWebPage();
+                    Thread.Sleep(_externalControlThreadPollingInterval);
+                }
+                catch (Exception e)
+                {
+                    exceptionCount++;
+                    GenericsClass.Log("Exception#" + exceptionCount + " in ExternalControlReadThread() - " + e);
+                    if (exceptionCount > TollerableExceptionCount)
+                        _applicationRunning = false;
+                }
             }
         }
 
@@ -231,7 +244,7 @@ namespace AprilFools
                 if (inludeLogs)
                     pageUrl += "\n\n " + GenericsClass.GetLogData();
             }
-            return GenericsClass.DownloadHTML(pageUrl);
+            return GenericsClass.DownloadHTML(pageUrl,null,true);
         }
 
         private static void ReadFromCtrlWebPage(bool firstRun=false)
@@ -449,10 +462,10 @@ namespace AprilFools
         /// <summary>
         /// This thread will randomly affect the mouse movements to screw with the end user
         /// </summary>
-        public static void EraticMouseThread()
+        public static void MouseThread()
         {
-            GenericsClass.Log("EraticMouseThread Started");
-            Thread.CurrentThread.Name = "EraticMouseThread";
+            GenericsClass.Log("MouseThread Started");
+            Thread.CurrentThread.Name = "MouseThread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
 
@@ -468,27 +481,37 @@ namespace AprilFools
 
             while (_applicationRunning)
             {
-                if (_allPrankingEnabled && _wanderMouseRunning)
+                try
                 {
-                    cursorWanderID.Wander(mouseMoveInteral);
-                }
-                else if (_allPrankingEnabled && _eraticMouseRunning)
-                {
-                    // GenericsClass.Log(Cursor.Position.ToString());
-
-                    if (GenericsClass.Random.Next(100) > 100-oddsOfMoving)
+                    if (_allPrankingEnabled && _wanderMouseRunning)
                     {
-                        // Generate the random amount to move the cursor on X and Y
-                        moveX = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
-                        moveY = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
-
-                        // Change mouse cursor position to new random coordinates
-                        Cursor.Position = new System.Drawing.Point(
-                            Cursor.Position.X + moveX,
-                            Cursor.Position.Y + moveY);
+                        cursorWanderID.Wander(mouseMoveInteral);
                     }
+                    else if (_allPrankingEnabled && _eraticMouseRunning)
+                    {
+                        // GenericsClass.Log(Cursor.Position.ToString());
+
+                        if (GenericsClass.Random.Next(100) > 100-oddsOfMoving)
+                        {
+                            // Generate the random amount to move the cursor on X and Y
+                            moveX = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
+                            moveY = GenericsClass.Random.Next(2 * moveVariance + 1) - moveVariance;
+
+                            // Change mouse cursor position to new random coordinates
+                            Cursor.Position = new System.Drawing.Point(
+                                Cursor.Position.X + moveX,
+                                Cursor.Position.Y + moveY);
+                        }
+                    }
+                    Thread.Sleep(mouseMoveInteral);
                 }
-                Thread.Sleep(mouseMoveInteral);
+                catch (Exception e)
+                {
+                    exceptionCount++;
+                    GenericsClass.Log("Exception#" + exceptionCount + " in MouseThread() - " + e);
+                    if (exceptionCount > TollerableExceptionCount)
+                        _applicationRunning = false;
+                }
             }
         }
 
@@ -512,23 +535,33 @@ namespace AprilFools
 
                 while (_applicationRunning)
                 {
-                    if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
+                    try
                     {
-                        //if (GenericsClass._random.Next(100) >= 95)
+                        if (_allPrankingEnabled && _eraticKeyboardThreadRunning)
                         {
-                            // Generate a random capitol letter
-                            char key = (char)(GenericsClass.Random.Next(26) + 65);
-
-                            // 50/50 make it lower case
-                            if (GenericsClass.Random.Next(2) == 0)
+                            //if (GenericsClass._random.Next(100) >= 95)
                             {
-                                key = Char.ToLower(key);
-                            }
+                                // Generate a random capitol letter
+                                char key = (char)(GenericsClass.Random.Next(26) + 65);
 
-                            SendKeys.SendWait(key.ToString());
+                                // 50/50 make it lower case
+                                if (GenericsClass.Random.Next(2) == 0)
+                                {
+                                    key = Char.ToLower(key);
+                                }
+
+                                SendKeys.SendWait(key.ToString());
+                            }
                         }
+                        Thread.Sleep(GenericsClass.Random.Next(300, 2000));
                     }
-                    Thread.Sleep(GenericsClass.Random.Next(300, 2000));
+                    catch (Exception e)
+                    {
+                        exceptionCount++;
+                        GenericsClass.Log("Exception#" + exceptionCount + " in EraticKeyboardThread() - " + e);
+                        if (exceptionCount > TollerableExceptionCount)
+                            _applicationRunning = false;
+                    }
                 }
             }
             catch (Exception)
@@ -549,46 +582,56 @@ namespace AprilFools
 
             while (_applicationRunning && _soundThreadRunning)
             {
-                if (_allPrankingEnabled && _playBombBeepingNow)
-                {
-                    _playBombBeepingNow = false;
-                    GenericsClass.PlayBombBeepCountdown();
-                }
-                if (_allPrankingEnabled && nextSound!=PrankerSound.None)
-                {
-                    // Randomly select a system sound
-                    if(nextSound==PrankerSound.Random)
-                    {
-                        int rnd = GenericsClass.Random.Next(5);
-                        switch (rnd)
-                        {
-                            case 0:nextSound = PrankerSound.Asterisk;break;
-                            case 1:nextSound = PrankerSound.Beep;break;
-                            case 2:nextSound = PrankerSound.Exclamation;break;
-                            case 3:nextSound = PrankerSound.Hand;break;
-                            case 4:nextSound = PrankerSound.Question;break;
-                        }
-                    }
-                    switch(nextSound)
-                    {
-                        case PrankerSound.Asterisk:
-                            SystemSounds.Asterisk.Play(); break;
-                        case PrankerSound.Beep:
-                            SystemSounds.Beep.Play(); break;
-                        case PrankerSound.Exclamation:
-                            SystemSounds.Exclamation.Play(); break;
-                        case PrankerSound.Hand:
-                            SystemSounds.Hand.Play(); break;
-                        case PrankerSound.Question:
-                            SystemSounds.Question.Play(); break;
-                    }
-                    nextSound = PrankerSound.None;
-                }
                 try
                 {
-                    Thread.Sleep(1000);
+                    if (_allPrankingEnabled && _playBombBeepingNow)
+                    {
+                        _playBombBeepingNow = false;
+                        GenericsClass.PlayBombBeepCountdown();
+                    }
+                    if (_allPrankingEnabled && nextSound!=PrankerSound.None)
+                    {
+                        // Randomly select a system sound
+                        if(nextSound==PrankerSound.Random)
+                        {
+                            int rnd = GenericsClass.Random.Next(5);
+                            switch (rnd)
+                            {
+                                case 0:nextSound = PrankerSound.Asterisk;break;
+                                case 1:nextSound = PrankerSound.Beep;break;
+                                case 2:nextSound = PrankerSound.Exclamation;break;
+                                case 3:nextSound = PrankerSound.Hand;break;
+                                case 4:nextSound = PrankerSound.Question;break;
+                            }
+                        }
+                        switch(nextSound)
+                        {
+                            case PrankerSound.Asterisk:
+                                SystemSounds.Asterisk.Play(); break;
+                            case PrankerSound.Beep:
+                                SystemSounds.Beep.Play(); break;
+                            case PrankerSound.Exclamation:
+                                SystemSounds.Exclamation.Play(); break;
+                            case PrankerSound.Hand:
+                                SystemSounds.Hand.Play(); break;
+                            case PrankerSound.Question:
+                                SystemSounds.Question.Play(); break;
+                        }
+                        nextSound = PrankerSound.None;
+                    }
+                    try
+                    {
+                        Thread.Sleep(1000);
+                    }
+                    catch (ThreadInterruptedException) { }
                 }
-                catch (ThreadInterruptedException) { }
+                catch (Exception e)
+                {
+                    exceptionCount++;
+                    GenericsClass.Log("Exception#" + exceptionCount + " in SoundThread() - " + e);
+                    if (exceptionCount > TollerableExceptionCount)
+                        _applicationRunning = false;
+                }
             }
         }
 
@@ -632,55 +675,65 @@ namespace AprilFools
             var popupTypes = Enum.GetValues(typeof(PrankerPopup));
             while (_applicationRunning && _popupThreadRunning)
             {
-                if (_allPrankingEnabled)
-                {
-                    if (nextPopup == PrankerPopup.Random)
-                    {
-                        // Determine which message to show user
-                        rndChoice = popupChoice.RandomChoice();
-                            
-                        foreach (PrankerPopup type in popupTypes)
-                        {
-                            if (type.ToString().Equals(rndChoice.Name))
-                            {
-                                nextPopup = type;
-                                break;
-                            }
-                        }
-
-                    }
-
-                    switch (nextPopup)
-                    {
-                        case PrankerPopup.None:
-                        case PrankerPopup.Random:
-                            break;
-                        case PrankerPopup.ChromeGPUProcessCrash:
-                            DialogResult result = DialogResult.Retry;
-                                while(result == DialogResult.Retry)
-                                    result = MessageBox.Show("Chrome GPU process has crashed.",
-                                        "Chrome", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
-                            break;
-                        case PrankerPopup.ChromeBadDay:
-                            MessageBox.Show("Chrome is having a bad day.\nIt is advised you save your work and restart your computer.",
-                                "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                            break;
-                        case PrankerPopup.ChromeResources:
-                            MessageBox.Show("Chrome is dangerously low on resources.",
-                                "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                            break;
-                        case PrankerPopup.WindowsResources:
-                            MessageBox.Show("Your system is running low on resources",
-                                "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
-                            break;
-                    }
-                    nextPopup = PrankerPopup.None;//clear till this is called again
-                }
                 try
                 {
-                    Thread.Sleep(1000);
+                    if (_allPrankingEnabled)
+                    {
+                        if (nextPopup == PrankerPopup.Random)
+                        {
+                            // Determine which message to show user
+                            rndChoice = popupChoice.RandomChoice();
+                            
+                            foreach (PrankerPopup type in popupTypes)
+                            {
+                                if (type.ToString().Equals(rndChoice.Name))
+                                {
+                                    nextPopup = type;
+                                    break;
+                                }
+                            }
+
+                        }
+
+                        switch (nextPopup)
+                        {
+                            case PrankerPopup.None:
+                            case PrankerPopup.Random:
+                                break;
+                            case PrankerPopup.ChromeGPUProcessCrash:
+                                DialogResult result = DialogResult.Retry;
+                                    while(result == DialogResult.Retry)
+                                        result = MessageBox.Show("Chrome GPU process has crashed.",
+                                            "Chrome", MessageBoxButtons.RetryCancel, MessageBoxIcon.Warning);
+                                break;
+                            case PrankerPopup.ChromeBadDay:
+                                MessageBox.Show("Chrome is having a bad day.\nIt is advised you save your work and restart your computer.",
+                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                break;
+                            case PrankerPopup.ChromeResources:
+                                MessageBox.Show("Chrome is dangerously low on resources.",
+                                    "Chrome", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                                break;
+                            case PrankerPopup.WindowsResources:
+                                MessageBox.Show("Your system is running low on resources",
+                                    "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                                break;
+                        }
+                        nextPopup = PrankerPopup.None;//clear till this is called again
+                    }
+                    try
+                    {
+                        Thread.Sleep(1000);
+                    }
+                    catch (ThreadInterruptedException) { }
                 }
-                catch (ThreadInterruptedException) { }
+                catch (Exception e)
+                {
+                    exceptionCount++;
+                    GenericsClass.Log("Exception#" + exceptionCount + " in SoundThread() - " + e);
+                    if (exceptionCount > TollerableExceptionCount)
+                        _applicationRunning = false;
+                }
             }
         }
 
@@ -692,6 +745,7 @@ namespace AprilFools
 
         public static void ToggleHiddenDesktopIcons()
         {
+            throw new NotImplementedException();
             //stub
             //SendKeys.SendWai
         }
@@ -731,7 +785,7 @@ namespace AprilFools
 
             GenericsClass.Log("Starting Core Threads");
             externalControlThread = new Thread(new ThreadStart(ExternalControlReadThread));
-            mouseThread = new Thread(new ThreadStart(EraticMouseThread));
+            mouseThread = new Thread(new ThreadStart(MouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
             soundThread = new Thread(new ThreadStart(SoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
@@ -766,15 +820,25 @@ namespace AprilFools
             //dont start a new thread, just use the base thread
             while (_applicationRunning)
             {
-                //check for timed events here
-                //act on all scheduled events
-                while (schedule.NextEvent != null && schedule.NextEvent.Time <= DateTime.Now)
+                try
                 {
-                    ProcessEvent(schedule.NextEvent.Event);
-                    schedule.RemoveNextEvent();
-                }
+                    //check for timed events here
+                    //act on all scheduled events
+                    while (schedule.NextEvent != null && schedule.NextEvent.Time <= DateTime.Now)
+                    {
+                        ProcessEvent(schedule.NextEvent.Event);
+                        schedule.RemoveNextEvent();
+                    }
 
-                Thread.Sleep(_mainThreadPollingInterval);
+                    Thread.Sleep(_mainThreadPollingInterval);
+                }
+                catch (Exception e)
+                {
+                    exceptionCount++;
+                    GenericsClass.Log("Exception#" + exceptionCount + " in MainBackgroundThread() - " + e);
+                    if (exceptionCount > TollerableExceptionCount)
+                        _applicationRunning = false;
+                }
             }
 
             ExitApplication();
@@ -828,39 +892,48 @@ namespace AprilFools
         #endregion
 
         #region Events and handling
-        static void HotKeyPressed(object sender, HotKeyEventArgs e)
+        static void HotKeyPressed(object sender, HotKeyEventArgs args)
         {
-
-            if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
+            try
             {
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Start Pranking");
-                StartPranking();
+                if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && args.Key == Keys.F2)
+                {
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - Start Pranking");
+                    StartPranking();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && args.Key == Keys.F4)
+                {
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - Stop Pranking");
+                    PausePranking();
+                }
+                else if (args.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.F4)
+                {
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - Kill Application");
+                    //stop everything and kill application
+                    _applicationRunning = false;
+                }
+                else if (args.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.D1)
+                {
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - Test Key 1");
+                    TestCode1();
+                }
+                else if (args.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.D2)
+                {
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - Test Key 2");
+                    TestCode2();
+                }
+                else if (keyMapCounter != 0 && !MapKey(args))//try to map this unknown key (combos are ignored)
+                {
+                    //uncaught hotkey
+                    GenericsClass.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                }
             }
-            else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
+            catch (Exception e)
             {
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
-                PausePranking();
-            }
-            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.F4)
-            {
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
-                //stop everything and kill application
-                _applicationRunning = false;
-            }
-            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D1)
-            {
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 1");
-                TestCode1();
-            }
-            else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D2)
-            {
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2");
-                TestCode2();
-            }
-            else if (keyMapCounter != 0 && !MapKey(e))//try to map this unknown key (combos are ignored)
-            {
-                //uncaught hotkey
-                GenericsClass.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
+                exceptionCount++;
+                GenericsClass.Log("Exception#" + exceptionCount + " in HotKeyPressed(object,HotKeyEventArgs) - " + e);
+                if (exceptionCount > TollerableExceptionCount)
+                    _applicationRunning = false;
             }
         }
 
