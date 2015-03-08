@@ -83,14 +83,14 @@ namespace Generics
             }
             catch (UriFormatException e)
             {
-                Console.WriteLine("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
+                GenericsClass.Log("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
                 return null;
             }
             catch (WebException e)
             {
                 if (reportExceptions)
                 {
-                    Console.WriteLine("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
+                    GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
                     return null;
                 }
                 else
@@ -246,6 +246,24 @@ namespace Generics
             BottomLeft = 2,
             BottomRight = 3,
             Random = -1,
+        }
+        #endregion
+
+        #region LogData
+        public static void Log(string l)
+        {
+            string timeStamp = DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss:ffff tt");
+            Console.WriteLine(timeStamp + "::" + l);
+        }
+
+        public static string GetLogData()
+        {
+            return "";
+        }
+
+        private static void AppendLog(string l)
+        {
+
         }
         #endregion
     }
