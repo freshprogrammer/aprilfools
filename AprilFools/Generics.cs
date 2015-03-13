@@ -55,7 +55,7 @@ namespace Generics
         #endregion
 
         #region Web Crawling
-        private const int DOWNLOAD_HTML_TIMEOUT = 1000 * 60 * 5;
+        public static int DOWNLOAD_HTML_TIMEOUT = 1000 * 60 * 20;
 
         public static string DownloadHTML(string url, string cookie = null, bool reportExceptions = false)
         {
@@ -83,14 +83,14 @@ namespace Generics
             }
             catch (UriFormatException e)
             {
-                GenericsClass.Log("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e);
+                GenericsClass.Log("DownloadHTML(string,string,bool) - Caught UriFormatException from url:\"" + url + "\" - " + e.Message);
                 return null;
             }
             catch (WebException e)
             {
                 if (reportExceptions)
                 {
-                    GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e);
+                    GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e.Message);
                     return null;
                 }
                 else
