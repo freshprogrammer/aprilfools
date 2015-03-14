@@ -6,6 +6,7 @@ using System.Linq;
 using System.Media;
 using System.Threading;
 using System.Windows.Forms;
+using System.Web;
 using Generics;
 
 namespace AprilFools
@@ -238,16 +239,17 @@ namespace AprilFools
                 return null;
 
             string pageUrl = ctrlWebPage;
+            string pageUrlData = "";
 
             if (updateSchedule)
             {
-                pageUrl += "?upload=Y&uploaddata=" + schedule;
+                pageUrlData += "?upload=Y&uploaddata=" + schedule;
                 if (includeTimeStamp)
-                    pageUrl += "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
+                    pageUrlData += "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
                 if (inludeLogs)
-                    pageUrl += "\n\n " + GenericsClass.GetLogData();
+                    pageUrlData += "\n\n " + GenericsClass.GetLogData();
             }
-            return GenericsClass.DownloadHTML(pageUrl,null,true);
+            return GenericsClass.DownloadHTML(pageUrl + pageUrlData, null, true);
         }
 
         private static void ReadFromCtrlWebPage(bool ignoreExternalCmds=false)

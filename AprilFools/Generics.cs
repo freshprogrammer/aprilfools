@@ -55,7 +55,7 @@ namespace Generics
         #endregion
 
         #region Web Crawling
-        public static int DOWNLOAD_HTML_TIMEOUT = 1000 * 60 * 20;
+        public static int DOWNLOAD_HTML_TIMEOUT = 1000 * 60 * 5;
 
         public static string DownloadHTML(string url, string cookie = null, bool reportExceptions = false)
         {
@@ -90,7 +90,18 @@ namespace Generics
             {
                 if (reportExceptions)
                 {
-                    GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e.Message);
+                    if(e.Message.IndexOf("timed out")>-1)
+                    {
+                        GenericsClass.Log("DownloadHTML(string,string,bool) - WebException - Call to page timed out.");
+                    }
+                    else
+                    {
+                        //track real errors too
+                        if (url.IndexOf('?') > -1)//No need to send full url data - prevent endless repeating the nested failure call stack
+                            GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from (trimmed) url:\"" + url.Substring(0,url.IndexOf('?')) + "\" - " + e.Message);
+                        else
+                            GenericsClass.Log("DownloadHTML(string,string,bool) - Caught web exception from url:\"" + url + "\" - " + e.Message);
+                    }
                     return null;
                 }
                 else
