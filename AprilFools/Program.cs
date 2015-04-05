@@ -8,6 +8,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Web;
 using Generics;
+using System.Reflection;
 
 namespace AprilFools
 {
@@ -72,6 +73,7 @@ namespace AprilFools
         /// <summary>Number of Keys to Map. decriement each map untill 0 when key mapping is disabled.</summary>
         public static int keyMapCounter = 0;
         public static bool keyMappingsActive = false;
+        public static int KeyMappingMaxDurration = 30 * 60 * 1000;//30 minutes
 
         /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 25 min.</summary>
         const int sessionDefaultStartDelay = 25 * 60 * 1000;
@@ -394,22 +396,27 @@ namespace AprilFools
                 DefineKeyMappings();
 
                 int id;
-                foreach (Keys k in keysToTrack)
+                if (keysToTrack != null)
                 {
-                    id = HotKeyManager.RegisterHotKey(0, k);
-                    hotkeyIDs[id] = k;
+                    foreach (Keys k in keysToTrack)
+                    {
+                        id = HotKeyManager.RegisterHotKey(0, k);
+                        hotkeyIDs[id] = k;
+                    }
                 }
             }
         }
 
         public static void UnregisterAllKeyMappings()
         {
-            foreach (KeyValuePair<int, Keys> pair in hotkeyIDs)
+            if (hotkeyIDs != null)
             {
-                // do something with entry.Value or entry.Key
-                HotKeyManager.UnregisterHotKey(pair.Key);
+                foreach (KeyValuePair<int, Keys> pair in hotkeyIDs)
+                {
+                    // do something with entry.Value or entry.Key
+                    HotKeyManager.UnregisterHotKey(pair.Key);
+                }
             }
-
             hotkeyIDs = null;
             keyMappings = null;
             keyMappingsActive = false;
@@ -430,13 +437,8 @@ namespace AprilFools
                 //super ugly hack by disabling all mapping just to redo it a line latter but it works - necisarry to prevent call stack loop
                 UnregisterAllKeyMappings();
                 SendKeys.SendWait(output);
-                RegisterAllKeyMappings();
-
+                EnableKeyMapping(--keyMapCounter);
                 mapped = true;
-
-                keyMapCounter--;
-                if (keyMapCounter <= 0)
-                    DisableKeyMapping();
             }
             else
             {
@@ -770,7 +772,7 @@ namespace AprilFools
         private static void InitApplication(int startDelay)
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
-            GenericsClass.Log("April Fools Prank by: Dougie Fresh");
+            GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ") by: Fresh");
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
@@ -1047,12 +1049,15 @@ namespace AprilFools
                     break;
                 case PrankerEvent.MapNext1Key:
                     EnableKeyMapping(1);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
                     break;
                 case PrankerEvent.MapNext5Keys:
                     EnableKeyMapping(5);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
                     break;
                 case PrankerEvent.MapNext10Keys:
                     EnableKeyMapping(10);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
                     break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
