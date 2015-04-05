@@ -1049,15 +1049,15 @@ namespace AprilFools
                     break;
                 case PrankerEvent.MapNext1Key:
                     EnableKeyMapping(1);
-                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
                 case PrankerEvent.MapNext5Keys:
                     EnableKeyMapping(5);
-                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
                 case PrankerEvent.MapNext10Keys:
                     EnableKeyMapping(10);
-                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
