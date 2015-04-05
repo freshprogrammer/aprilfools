@@ -180,14 +180,19 @@ namespace AprilFools
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i = 1; i <= 10; i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
+                    break;
+                case PrankerSchedule.Medium_SingleKeySwaps:
+                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
+                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse5s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
+                    plan.Add(PrankerEvent.RunEraticMouse10s);
+                    for (int i = 1; i <= 4; i++) plan.Add(PrankerEvent.RunWanderMouse5s);
+                    for (int i = 1; i <= 10; i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i = 1; i <= 20; i++)plan.Add(PrankerEvent.MapNext1Key);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
             }
@@ -206,6 +211,7 @@ namespace AprilFools
             SuperEasy,
             Easy,
             Medium,
+            Medium_SingleKeySwaps,
         }
         #endregion
 
