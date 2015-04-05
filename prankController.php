@@ -116,7 +116,7 @@
 		CreateControlButtons();
 		echo "<hr>\n";
 		echo "</div>\n";
-		echo "<div style='overflow: auto; width:*; height: 90vh;'>\n";
+		echo "<div style='overflow: auto; width:*;'>\n";
 		echo str_replace($cmdSeperationTag, "<BR>\n", $curSchedule);
 		echo "</div>\n";
 		

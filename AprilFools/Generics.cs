@@ -612,7 +612,7 @@ namespace Generics
             }
         }
 
-        public void RemoveEventsByType(T t)
+        public void RemoveAllEventsOfType(T t)
         {
             lock (Lock)
             {
@@ -640,8 +640,12 @@ namespace Generics
         /// </summary>
         /// <param name="evnt">Event to occur</param>
         /// <param name="deley">Delay in miliseconds from now</param>
-        public void AddEvent(T evnt, int deley)
+        public void AddEvent(T evnt, int deley, bool removeAllExisting=false)
         {
+            if (removeAllExisting)
+            {
+                RemoveAllEventsOfType(evnt);
+            }
             ScheduledEvent<T> newEvent = new ScheduledEvent<T>(DateTime.Now.AddMilliseconds(deley), evnt);
             AddEvent(newEvent);
         }
