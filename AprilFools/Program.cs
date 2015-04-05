@@ -75,11 +75,12 @@ namespace AprilFools
         public static bool keyMappingsActive = false;
         public static int KeyMappingMaxDurration = 30 * 60 * 1000;//30 minutes
 
-        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 25 min.</summary>
-        const int sessionDefaultStartDelay = 25 * 60 * 1000;
+        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 5 min.</summary>
+        const int sessionDefaultStartDelay = 5 * 60 * 1000;
         /// <summary>Length of the session. Default of 8 hours when events will be randomly distributed.</summary>
         const int sessionDefaultDurration = 8 * 60 * 60 * 1000;
         private static EventScheduler<PrankerEvent> schedule;
+        private const PrankerSchedule defaultScheduleType = PrankerSchedule.Easy;
 
         private static Thread externalControlThread;
         private static Thread mouseThread;
@@ -103,13 +104,19 @@ namespace AprilFools
         {
             // Check for command line arguments
             int startDelay = 0;
-            if (args.Length >= 1)
+            PrankerSchedule startSchedule = defaultScheduleType;
+            try
             {
-                startDelay = Convert.ToInt32(args[0]);
-                ctrlWebPage = args[1]+CTRL_WEB_PAGE_NAME;
+                if (args.Length >= 1)
+                {
+                    startDelay = Convert.ToInt32(args[0]);
+                    ctrlWebPage = args[1] + CTRL_WEB_PAGE_NAME;
+                    startSchedule = (PrankerSchedule)Convert.ToInt32(args[2]);
+                }
             }
+            catch (Exception) { }
 
-            InitApplication(startDelay);
+            InitApplication(startDelay, startSchedule);
         }
 
         #region Test code
@@ -136,7 +143,7 @@ namespace AprilFools
         /// <param name="sessionDurration">Default durration is 8 hours</param>
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
-        public static void CreateSchedule(PrankerSchedule scheduleType=PrankerSchedule.SuperEasy, 
+        public static void CreateSchedule(PrankerSchedule scheduleType, 
             int sessionDurration = sessionDefaultDurration, 
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
@@ -193,7 +200,7 @@ namespace AprilFools
                     for (int i = 1; i <= 4; i++) plan.Add(PrankerEvent.RunWanderMouse5s);
                     for (int i = 1; i <= 10; i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     for (int i = 1; i <= 20; i++)plan.Add(PrankerEvent.MapNext1Key);
-                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
                     break;
             }
 
@@ -208,10 +215,10 @@ namespace AprilFools
 
         public enum PrankerSchedule
         {
-            SuperEasy,
-            Easy,
-            Medium,
-            Medium_SingleKeySwaps,
+            SuperEasy=1,
+            Easy = 2,
+            Medium = 3,
+            Medium_SingleKeySwaps = 4,
         }
         #endregion
 
@@ -775,7 +782,7 @@ namespace AprilFools
         #endregion
 
         #region Core threads and functionality
-        private static void InitApplication(int startDelay)
+        private static void InitApplication(int startDelay, PrankerSchedule startSchedule)
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
             GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ") by: Fresh");
@@ -813,7 +820,7 @@ namespace AprilFools
                 schedule.AddEvent(PrankerEvent.StartPranking, startDelay * 1000);
             }
 
-            CreateSchedule(PrankerSchedule.SuperEasy, sessionDefaultDurration, true, sessionDefaultStartDelay);
+            CreateSchedule(startSchedule, sessionDefaultDurration, true, sessionDefaultStartDelay);
 
             //upldoad initial schedule and clear outstanding scheduled cmds
             ReadFromCtrlWebPage(true);
@@ -1074,6 +1081,9 @@ namespace AprilFools
                 case PrankerEvent.CreateSchedule_Medium:
                     CreateSchedule(PrankerSchedule.Medium);
                     break;
+                case PrankerEvent.CreateSchedule_Medium_SingleKeySwaps:
+                    CreateSchedule(PrankerSchedule.Medium_SingleKeySwaps);
+                    break;
                 case PrankerEvent.ClearSchedule:
                     schedule.ClearSchedule();
                     break;
@@ -1102,6 +1112,7 @@ namespace AprilFools
             CreateSchedule_SuperEasy,
             CreateSchedule_Easy,
             CreateSchedule_Medium,
+            CreateSchedule_Medium_SingleKeySwaps,
             ClearSchedule,
 
             //mouse events
