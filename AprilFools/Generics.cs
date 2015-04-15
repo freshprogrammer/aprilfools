@@ -14,7 +14,7 @@ namespace Generics
     {
         public static Random Random = new Random();
 
-        #region Beeps vaiables and functions
+        #region Beep vaiables and functions
         public static void Beep(BeepPitch p, BeepDurration d)   { Beep((int)p, (int)d); }
         public static void Beep(BeepPitch p, int d)             { Beep((int)p, d); }
         public static void Beep(int p, BeepDurration d)         { Beep(p, (int)d); }
@@ -260,7 +260,9 @@ namespace Generics
         }
         #endregion
 
-        #region LogData
+        #region LogData / System
+        private static object logFileLock = new Object();
+        private static string logFileName = @"log.txt";
         private const int LogHistoryCount = 100;
         private static List<string> logRecords = new List<string>(LogHistoryCount);
         public static void Log(string log)
@@ -269,6 +271,37 @@ namespace Generics
             log = timeStamp + "::" + log;
             AppendLog(log);
             Console.WriteLine(log);
+
+            lock (logFileLock)
+            {
+                using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
+                {
+                    sw.WriteLine(log);
+                    sw.Flush();
+                    sw.Close();
+                }
+            }
+        }
+
+        public static void PrepLogFile(string logFileFullName)
+        {
+            logFileName = logFileFullName;
+            //rolling logs - move log to next log file up (1 to 2) up to 9
+            int logStorageMax = 9;//single digits
+            int logIndex = logStorageMax;
+            while (logIndex >= 1)
+            {
+                string logOlder = logFileName.Replace(".txt", "_" + logIndex + ".txt");
+                string logNewer;
+                if (logIndex > 1)
+                    logNewer = logFileName.Replace(".txt", "_" + (logIndex - 1) + ".txt");
+                else
+                    logNewer = logFileName;
+                MoveFileOverwrite(logNewer, logOlder);
+                logIndex--;
+            }
+            //create any necisarry directories for logs
+            Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
         }
 
         public static string GetLogData()
@@ -287,6 +320,17 @@ namespace Generics
             if (logRecords.Count == logRecords.Capacity)
                 logRecords.RemoveAt(0);
             logRecords.Add(log);
+        }
+
+        public static void MoveFileOverwrite(string src, string dest)
+        {
+            if(File.Exists(src))
+            {
+                if (File.Exists(dest))
+                    File.Delete(dest);
+                File.Move(src, dest);
+                Directory.CreateDirectory(Path.GetDirectoryName(dest));
+            }
         }
         #endregion
     }
