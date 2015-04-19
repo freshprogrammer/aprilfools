@@ -785,7 +785,7 @@ namespace AprilFools
         private static void InitApplication(int startDelay, PrankerSchedule startSchedule)
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
-            GenericsClass.PrepLogFile(@"logs\log.txt");
+            GenericsClass.PrepLogFile(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)+@"\Java\logs\log.txt");
             GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ") by: Fresh");
 
 #if _TESTING

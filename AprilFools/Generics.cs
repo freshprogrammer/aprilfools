@@ -263,7 +263,7 @@ namespace Generics
         #region LogData / System
         private static object logFileLock = new Object();
         private static string logFileName = @"log.txt";
-        private const int LogHistoryCount = 100;
+        private const int LogHistoryCount = 40;
         private static List<string> logRecords = new List<string>(LogHistoryCount);
         public static void Log(string log)
         {
