@@ -1038,7 +1038,7 @@ namespace AprilFools
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
                     break;
                 case PrankerEvent.MoveCursorToRandomCorner:
-                    GenericsClass.MoveCursorToCorner(GenericsClass.Corner.Random);
+                    GenericsClass.MoveCursorToCorner(GenericsClass.Corner.Random_NotBottomRight);
                     break;
                 case PrankerEvent.StartWanderMouse:
                     StartWanderMouse();

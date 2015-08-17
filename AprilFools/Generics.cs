@@ -231,6 +231,8 @@ namespace Generics
 
             if (c == Corner.Random)
                 c = (Corner)Random.Next(0, 4);
+            else if (c == Corner.Random_NotBottomRight)
+                c = (Corner)Random.Next(0, 3);
 
             switch(c)
             {
@@ -257,6 +259,7 @@ namespace Generics
             BottomLeft = 2,
             BottomRight = 3,
             Random = -1,
+            Random_NotBottomRight = -2,//avoid show desktop hover in botom right on windows
         }
         #endregion
 
