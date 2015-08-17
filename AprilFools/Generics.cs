@@ -231,6 +231,8 @@ namespace Generics
 
             if (c == Corner.Random)
                 c = (Corner)Random.Next(0, 4);
+            else if (c == Corner.Random_NotBottomRight)
+                c = (Corner)Random.Next(0, 3);
 
             switch(c)
             {
@@ -257,6 +259,7 @@ namespace Generics
             BottomLeft = 2,
             BottomRight = 3,
             Random = -1,
+            Random_NotBottomRight = -2,//avoid show desktop hover in botom right on windows
         }
         #endregion
 
@@ -302,6 +305,11 @@ namespace Generics
             }
             //create any necisarry directories for logs
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
+        }
+
+        public static int GetLogCount()
+        {
+            return logRecords.Count;
         }
 
         public static string GetLogData()
@@ -461,7 +469,7 @@ namespace Generics
         NoRepeat = 0x4000
     }
 
-    #endregion keyboard hotkeys
+    #endregion keyboard hooks
 
     #region Beeps
     public enum BeepPitch { High = 800, Medium = 600, Low = 400 };

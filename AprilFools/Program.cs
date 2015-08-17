@@ -48,7 +48,8 @@ namespace AprilFools
         /// <summary>sleep time for main thread</summary>
         private const int _mainThreadPollingInterval = 50;
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
-        private const int _externalControlThreadPollingInterval = 5*1000;
+        private const int _externalControlThreadPollingInterval = 5 * 1000;
+        private const int _externalControlThreadPauseAfterFail = 5 * 60 * 1000 - _externalControlThreadPollingInterval;//5 min wait after each failure
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
@@ -154,30 +155,25 @@ namespace AprilFools
             switch (scheduleType)
             {
                 case PrankerSchedule.SuperEasy:
-                    if(_popupThreadRunning)plan.Add(PrankerEvent.CreateRandomPopup);
+                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_SuperEasy, sessionDurration);
                     break;
                 case PrankerSchedule.Easy:
-                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
+                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Easy, sessionDurration);
                     break;
                 case PrankerSchedule.Medium:
-                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
-                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
+                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
@@ -187,19 +183,48 @@ namespace AprilFools
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext5Keys);
                     plan.Add(PrankerEvent.MapNext10Keys);
-                    for (int i = 1; i <= 10; i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<=10;i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_SingleKeySwaps:
+                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
+                    for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<=20;i++) plan.Add(PrankerEvent.MapNext1Key);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    break;
+                case PrankerSchedule.Medium_DoubleKeySwaps:
+                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
+                    for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext1Key);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    break;
+                case PrankerSchedule.Medium_PlusSome://just turned some minor stuff up like move cursor to corner
+                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
+                    for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
+                    for (int i=1;i<= 3;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
+                    for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
+                    for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunWanderMouse10s);
+                    for (int i=1;i<=40;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<=15;i++) plan.Add(PrankerEvent.MapNext1Key);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    break;
+                case PrankerSchedule.Hard:
+                    /*if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
                     if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
-                    if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
-                    plan.Add(PrankerEvent.RunEraticMouse5s);
-                    plan.Add(PrankerEvent.RunEraticMouse5s);
-                    plan.Add(PrankerEvent.RunEraticMouse10s);
-                    plan.Add(PrankerEvent.RunEraticMouse10s);
-                    for (int i = 1; i <= 4; i++) plan.Add(PrankerEvent.RunWanderMouse5s);
-                    for (int i = 1; i <= 10; i++)plan.Add(PrankerEvent.MoveCursorToRandomCorner);
-                    for (int i = 1; i <= 20; i++)plan.Add(PrankerEvent.MapNext1Key);
+                    for (int i=1;i<=2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
+                    for (int i=1;i<=2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
+                    for (int i=1;i<=4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext1Key);
+                    for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);*/
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
                     break;
             }
@@ -219,6 +244,9 @@ namespace AprilFools
             Easy = 2,
             Medium = 3,
             Medium_SingleKeySwaps = 4,
+            Medium_DoubleKeySwaps = 5,
+            Medium_PlusSome = 6,
+            Hard = 9,
         }
         #endregion
 
@@ -332,14 +360,26 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                FetchCtrlPage(true,true);
+                html = FetchCtrlPage(true,true);
+                if (html != null)
+                    externalControlPageFailAttempts = 0; //sucsessfull transactions - read and write
+                else //returned null on second page read (write)
+                {
+                    if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                    {
+                        _externalControlThreadRunning = false;
+                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs ("+GenericsClass.GetLogData().Length+" chars)");
+                    }
+                    else
+                        Thread.Sleep(_externalControlThreadPauseAfterFail);
+                }
             }
-            else
+            else //returned null on first page read
             {
                 if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
                 {
                     _externalControlThreadRunning = false;
-                    GenericsClass.Log("ReadFromCtrlWebPage() - External control page timed out after " + externalControlPageFailAttempts + " attempts.");
+                    GenericsClass.Log("ReadFromCtrlWebPage() - External control page read timed out after " + externalControlPageFailAttempts + " attempts.");
 #if _TESTING
                     //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
@@ -347,6 +387,8 @@ namespace AprilFools
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
 #endif
                 }
+                else
+                    Thread.Sleep(_externalControlThreadPauseAfterFail);
             }
         }
         #endregion
@@ -996,7 +1038,7 @@ namespace AprilFools
                     schedule.AddEvent(PrankerEvent.StopEraticMouse, 20 * 1000);
                     break;
                 case PrankerEvent.MoveCursorToRandomCorner:
-                    GenericsClass.MoveCursorToCorner(GenericsClass.Corner.Random);
+                    GenericsClass.MoveCursorToCorner(GenericsClass.Corner.Random_NotBottomRight);
                     break;
                 case PrankerEvent.StartWanderMouse:
                     StartWanderMouse();
@@ -1063,6 +1105,10 @@ namespace AprilFools
                     break;
                 case PrankerEvent.MapNext1Key:
                     EnableKeyMapping(1);
+                    schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
+                    break;
+                case PrankerEvent.MapNext2Keys:
+                    EnableKeyMapping(2);
                     schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
                 case PrankerEvent.MapNext5Keys:
@@ -1138,6 +1184,7 @@ namespace AprilFools
             StartMappingAllKeys,
             StopMappingAllKeys,
             MapNext1Key,
+            MapNext2Keys,
             MapNext5Keys,
             MapNext10Keys,
 
