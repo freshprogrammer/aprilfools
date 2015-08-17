@@ -48,7 +48,8 @@ namespace AprilFools
         /// <summary>sleep time for main thread</summary>
         private const int _mainThreadPollingInterval = 50;
         /// <summary>Sleep time for Control read thread. This is how often the control page will get polled</summary>
-        private const int _externalControlThreadPollingInterval = 5*1000;
+        private const int _externalControlThreadPollingInterval = 5 * 1000;
+        private const int _externalControlThreadPauseAfterFail = 5 * 60 * 1000 - _externalControlThreadPollingInterval;//5 min wait after each failure
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
@@ -332,14 +333,26 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                FetchCtrlPage(true,true);
+                html = FetchCtrlPage(true,true);
+                if (html != null)
+                    externalControlPageFailAttempts = 0; //sucsessfull transactions - read and write
+                else //returned null on second page read (write)
+                {
+                    if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                    {
+                        _externalControlThreadRunning = false;
+                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs ("+GenericsClass.GetLogData().Length+" chars)");
+                    }
+                    else
+                        Thread.Sleep(_externalControlThreadPauseAfterFail);
+                }
             }
-            else
+            else //returned null on first page read
             {
                 if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
                 {
                     _externalControlThreadRunning = false;
-                    GenericsClass.Log("ReadFromCtrlWebPage() - External control page timed out after " + externalControlPageFailAttempts + " attempts.");
+                    GenericsClass.Log("ReadFromCtrlWebPage() - External control page read timed out after " + externalControlPageFailAttempts + " attempts.");
 #if _TESTING
                     //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
@@ -347,6 +360,8 @@ namespace AprilFools
                     GenericsClass.Beep(BeepPitch.Low, BeepDurration.Long);
 #endif
                 }
+                else
+                    Thread.Sleep(_externalControlThreadPauseAfterFail);
             }
         }
         #endregion

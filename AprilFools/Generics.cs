@@ -304,6 +304,11 @@ namespace Generics
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
         }
 
+        public static int GetLogCount()
+        {
+            return logRecords.Count;
+        }
+
         public static string GetLogData()
         {
             string result = "";
@@ -461,7 +466,7 @@ namespace Generics
         NoRepeat = 0x4000
     }
 
-    #endregion keyboard hotkeys
+    #endregion keyboard hooks
 
     #region Beeps
     public enum BeepPitch { High = 800, Medium = 600, Low = 400 };
