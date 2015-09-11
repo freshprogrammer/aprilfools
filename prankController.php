@@ -41,10 +41,6 @@
 		if(GetInput("Kill")==="Y") 			AppendCmd("KillApplication");
 		if(GetInput("Pause")==="Y") 		AppendCmd("PausePranking");
 		if(GetInput("Bomb")==="Y") 			AppendCmd("PlayBombBeeping");
-		if(GetInput("ScheduleSE")==="Y") 	AppendCmd("CreateSchedule_SuperEasy");
-		if(GetInput("ScheduleE")==="Y") 	AppendCmd("CreateSchedule_Easy");
-		if(GetInput("ScheduleM")==="Y") 	AppendCmd("CreateSchedule_Medium");
-		if(GetInput("Clear")==="Y") 		AppendCmd("ClearSchedule");
 		if(GetInput("HideCursor")==="Y") 	AppendCmd("MoveCursorToRandomCorner");
 		if(GetInput("EraticM5")==="Y") 		AppendCmd("RunEraticMouse5s");
 		if(GetInput("EraticM10")==="Y") 	AppendCmd("RunEraticMouse10s");
@@ -65,6 +61,14 @@
 		if(GetInput("Play_E")==="Y")		AppendCmd("PlaySound_Exclamation");
 		if(GetInput("Play_H")==="Y")		AppendCmd("PlaySound_Hand");
 		if(GetInput("Play_Q")==="Y")		AppendCmd("PlaySound_Question");
+		//schedules
+		if(GetInput("Schedule")==="C") 		AppendCmd("ClearSchedule");
+		if(GetInput("Schedule")==="SE") 	AppendCmd("CreateSchedule_SuperEasy");
+		if(GetInput("Schedule")==="E") 		AppendCmd("CreateSchedule_Easy");
+		if(GetInput("Schedule")==="M") 		AppendCmd("CreateSchedule_Medium");
+		if(GetInput("Schedule")==="M1") 	AppendCmd("CreateSchedule_Medium_SingleKeySwaps");
+		if(GetInput("Schedule")==="M2") 	AppendCmd("CreateSchedule_Medium_DoubleKeySwaps");
+		if(GetInput("Schedule")==="M3") 	AppendCmd("CreateSchedule_Medium_PlusSome");
 	}
 	
 	function CreateControlButtons()
@@ -73,10 +77,7 @@
 		CreateAControlButton("Cancel"			,"Cancel");
 		CreateAControlButton("Kill"				,"Kill","Y", true);
 		CreateAControlButton("Pause"			,"Pause");
-		CreateAControlButton("XEasy schedule"	,"ScheduleSE");
-		CreateAControlButton("Easy schedule"	,"ScheduleE");
-		CreateAControlButton("Med schedule"		,"ScheduleM");
-		CreateAControlButton("Clear schedule"	,"Clear");
+		CreateScheduleSelector();
 		CreateAControlButton("Hide Cursor"		,"HideCursor");
 		CreateAControlButton("Eratic mouse 5s"	,"EraticM5");
 		CreateAControlButton("Eratic mouse 10s"	,"EraticM10");
@@ -98,6 +99,23 @@
 		CreateAControlButton("Play hand"       	,"Play_H");
 		//CreateAControlButton("Play question"   ,"Play_Q");//doesnt work
 		//CreateAControlButton("Bomb beep"		,"Bomb");
+	}
+	
+	function CreateScheduleSelector()
+	{
+		echo "	<form name='scheduleForm' action='' method=post style='display: inline-block;'>\n";
+		echo "		<select name='Schedule' id='scheduleSelect' onchange='this.form.submit()'>\n";
+		echo "			<option value=''>Change Schedule...</option>\n";
+		echo "			<option value=''>-</option>\n";
+		echo "			<option value='C'>Clear</option>\n";
+		echo "			<option value='SE'>XEasy schedule</option>\n";
+		echo "			<option value='E'>Easy</option>\n";
+		echo "			<option value='M'>Medium</option>\n";
+		echo "			<option value='M1'>Medium_SingleKeySwaps</option>\n";
+		echo "			<option value='M2'>Medium_DoubleKeySwaps</option>\n";
+		echo "			<option value='M3'>Medium_PlusSome</option>\n";
+		echo "		</select>\n";
+		echo "	</form>\n";
 	}
 	
 	function BuildPage()

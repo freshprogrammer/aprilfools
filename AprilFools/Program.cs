@@ -172,6 +172,7 @@ namespace AprilFools
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Easy, sessionDurration);
                     break;
+                default:
                 case PrankerSchedule.Medium:
                     if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
@@ -203,7 +204,7 @@ namespace AprilFools
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext1Key);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
-                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_PlusSome://just turned some minor stuff up like move cursor to corner
                     if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
@@ -214,7 +215,7 @@ namespace AprilFools
                     for (int i=1;i<=40;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     for (int i=1;i<=15;i++) plan.Add(PrankerEvent.MapNext1Key);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
-                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_PlusSome, sessionDurration);
                     break;
                 case PrankerSchedule.Hard:
                     /*if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
@@ -464,7 +465,7 @@ namespace AprilFools
 
         public static void UnregisterAllKeyMappings()
         {
-            if (hotkeyIDs != null)
+            ; if (hotkeyIDs != null)
             {
                 foreach (KeyValuePair<int, Keys> pair in hotkeyIDs)
                 {
@@ -1131,6 +1132,12 @@ namespace AprilFools
                 case PrankerEvent.CreateSchedule_Medium_SingleKeySwaps:
                     CreateSchedule(PrankerSchedule.Medium_SingleKeySwaps);
                     break;
+                case PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps:
+                    CreateSchedule(PrankerSchedule.Medium_DoubleKeySwaps);
+                    break;
+                case PrankerEvent.CreateSchedule_Medium_PlusSome:
+                    CreateSchedule(PrankerSchedule.Medium_PlusSome);
+                    break;
                 case PrankerEvent.ClearSchedule:
                     schedule.ClearSchedule();
                     break;
@@ -1160,6 +1167,8 @@ namespace AprilFools
             CreateSchedule_Easy,
             CreateSchedule_Medium,
             CreateSchedule_Medium_SingleKeySwaps,
+            CreateSchedule_Medium_DoubleKeySwaps,
+            CreateSchedule_Medium_PlusSome,
             ClearSchedule,
 
             //mouse events
