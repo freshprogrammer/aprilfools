@@ -123,9 +123,11 @@ namespace AprilFools
         #region Test code
         public static void TestCode1()
         {
-            schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
+            //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
+            schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
+            
         }
 
         public static void TestCode2()
@@ -133,6 +135,7 @@ namespace AprilFools
             //DisableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeResources);
             schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
+            schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
         }
         #endregion
 
@@ -145,7 +148,7 @@ namespace AprilFools
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
         public static void CreateSchedule(PrankerSchedule scheduleType, 
-            int sessionDurration = sessionDefaultDurration, 
+            int sessionDurration = sessionDefaultDurration, //in ms
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
         {
@@ -715,6 +718,20 @@ namespace AprilFools
             Question,
         }
 
+        /* Designed for playing repeasted sounds but didn't want to deal with converting PrankerSound sound to PrankerEvent */
+        public static void RepeatEventAfterPause(PrankerEvent e, int repeatCount, int pause)
+        {
+            int offset = 0;
+            int x = 0;
+
+            while (x < repeatCount)
+            {
+                schedule.AddEvent(e, offset);
+                offset += pause;
+                x++;
+            }
+        }
+
         /// <summary>
         /// This thread will popup fake error notifications to make the user go crazy and pull their hair out
         /// </summary>
@@ -1095,6 +1112,15 @@ namespace AprilFools
                 case PrankerEvent.PlaySound_Question:
                     PlaySound(PrankerSound.Question);
                     break;
+                case PrankerEvent.PlaySound_Asterisk3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Asterisk,3,1000);
+                    break;
+                case PrankerEvent.PlaySound_Exclamation3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Exclamation, 3, 1000);
+                    break;
+                case PrankerEvent.PlaySound_Hand3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Hand, 3, 1000);
+                    break;
                 case PrankerEvent.PlayBombBeeping:
                     _playBombBeepingNow = true;
                     break;
@@ -1205,6 +1231,9 @@ namespace AprilFools
             PlaySound_Exclamation,
             PlaySound_Hand,
             PlaySound_Question,
+            PlaySound_Asterisk3X,
+            PlaySound_Exclamation3X,
+            PlaySound_Hand3X,
 
             //popup events
             CreateRandomPopup,
