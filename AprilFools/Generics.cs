@@ -62,6 +62,7 @@ namespace Generics
             try
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.KeepAlive = false;
                 request.Timeout = DOWNLOAD_HTML_TIMEOUT;
                 if (cookie != null)
                     request.Headers.Add(HttpRequestHeader.Cookie, cookie);

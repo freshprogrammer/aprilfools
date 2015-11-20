@@ -829,7 +829,7 @@ namespace AprilFools
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
             GenericsClass.PrepLogFile(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)+@"\Java\logs\log.txt");
-            GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ") by: Fresh");
+            GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
