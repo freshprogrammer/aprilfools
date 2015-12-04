@@ -123,9 +123,11 @@ namespace AprilFools
         #region Test code
         public static void TestCode1()
         {
-            schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
+            //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
+            schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
+            
         }
 
         public static void TestCode2()
@@ -133,6 +135,7 @@ namespace AprilFools
             //DisableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeResources);
             schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
+            schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
         }
         #endregion
 
@@ -145,7 +148,7 @@ namespace AprilFools
         /// <param name="loopSession">Should the session start over/re-generate when the durration is up.</param>
         /// <param name="startDelay">Buffer time at start of session when nothing will be scheduled</param>
         public static void CreateSchedule(PrankerSchedule scheduleType, 
-            int sessionDurration = sessionDefaultDurration, 
+            int sessionDurration = sessionDefaultDurration, //in ms
             bool loopSession = true, 
             int startDelay=sessionDefaultStartDelay)
         {
@@ -172,6 +175,7 @@ namespace AprilFools
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Easy, sessionDurration);
                     break;
+                default:
                 case PrankerSchedule.Medium:
                     if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
@@ -203,7 +207,7 @@ namespace AprilFools
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext1Key);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
-                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_PlusSome://just turned some minor stuff up like move cursor to corner
                     if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
@@ -214,7 +218,7 @@ namespace AprilFools
                     for (int i=1;i<=40;i++) plan.Add(PrankerEvent.MoveCursorToRandomCorner);
                     for (int i=1;i<=15;i++) plan.Add(PrankerEvent.MapNext1Key);
                     for (int i=1;i<=10;i++) plan.Add(PrankerEvent.MapNext2Keys);
-                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
+                    if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_PlusSome, sessionDurration);
                     break;
                 case PrankerSchedule.Hard:
                     /*if (_popupThreadRunning) plan.Add(PrankerEvent.CreateRandomPopup);
@@ -464,7 +468,7 @@ namespace AprilFools
 
         public static void UnregisterAllKeyMappings()
         {
-            if (hotkeyIDs != null)
+            ; if (hotkeyIDs != null)
             {
                 foreach (KeyValuePair<int, Keys> pair in hotkeyIDs)
                 {
@@ -714,6 +718,20 @@ namespace AprilFools
             Question,
         }
 
+        /* Designed for playing repeasted sounds but didn't want to deal with converting PrankerSound sound to PrankerEvent */
+        public static void RepeatEventAfterPause(PrankerEvent e, int repeatCount, int pause)
+        {
+            int offset = 0;
+            int x = 0;
+
+            while (x < repeatCount)
+            {
+                schedule.AddEvent(e, offset);
+                offset += pause;
+                x++;
+            }
+        }
+
         /// <summary>
         /// This thread will popup fake error notifications to make the user go crazy and pull their hair out
         /// </summary>
@@ -828,7 +846,7 @@ namespace AprilFools
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
             GenericsClass.PrepLogFile(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)+@"\Java\logs\log.txt");
-            GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ") by: Fresh");
+            GenericsClass.Log("April Fools Prank (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
 
 #if _TESTING
             //if (MessageBox.Show("Running in testing mode. Press OK to start.","\"The\" App",MessageBoxButtons.OKCancel,MessageBoxIcon.Warning) == DialogResult.Cancel)return;
@@ -1094,6 +1112,15 @@ namespace AprilFools
                 case PrankerEvent.PlaySound_Question:
                     PlaySound(PrankerSound.Question);
                     break;
+                case PrankerEvent.PlaySound_Asterisk3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Asterisk,3,1000);
+                    break;
+                case PrankerEvent.PlaySound_Exclamation3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Exclamation, 3, 1000);
+                    break;
+                case PrankerEvent.PlaySound_Hand3X:
+                    RepeatEventAfterPause(PrankerEvent.PlaySound_Hand, 3, 1000);
+                    break;
                 case PrankerEvent.PlayBombBeeping:
                     _playBombBeepingNow = true;
                     break;
@@ -1131,6 +1158,12 @@ namespace AprilFools
                 case PrankerEvent.CreateSchedule_Medium_SingleKeySwaps:
                     CreateSchedule(PrankerSchedule.Medium_SingleKeySwaps);
                     break;
+                case PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps:
+                    CreateSchedule(PrankerSchedule.Medium_DoubleKeySwaps);
+                    break;
+                case PrankerEvent.CreateSchedule_Medium_PlusSome:
+                    CreateSchedule(PrankerSchedule.Medium_PlusSome);
+                    break;
                 case PrankerEvent.ClearSchedule:
                     schedule.ClearSchedule();
                     break;
@@ -1160,6 +1193,8 @@ namespace AprilFools
             CreateSchedule_Easy,
             CreateSchedule_Medium,
             CreateSchedule_Medium_SingleKeySwaps,
+            CreateSchedule_Medium_DoubleKeySwaps,
+            CreateSchedule_Medium_PlusSome,
             ClearSchedule,
 
             //mouse events
@@ -1196,6 +1231,9 @@ namespace AprilFools
             PlaySound_Exclamation,
             PlaySound_Hand,
             PlaySound_Question,
+            PlaySound_Asterisk3X,
+            PlaySound_Exclamation3X,
+            PlaySound_Hand3X,
 
             //popup events
             CreateRandomPopup,
