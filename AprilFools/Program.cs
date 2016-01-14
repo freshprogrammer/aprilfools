@@ -1,4 +1,4 @@
-﻿//#define _TESTING
+﻿#define _TESTING
 
 using System;
 using System.Collections.Generic;
@@ -97,6 +97,8 @@ namespace AprilFools
         private static int externalControlPageFailAttempts = 0;
         private static string ctrlWebPage = null;
 
+        private static SplashScreen splashScreen = new SplashScreen();
+
         /// <summary>
         /// Entry point for prank application
         /// </summary>
@@ -126,8 +128,9 @@ namespace AprilFools
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
-            schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
-            
+            //schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
+
+            splashScreen.ShowDialog();
         }
 
         public static void TestCode2()

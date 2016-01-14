@@ -20,4 +20,4 @@ Sample cmd line args for start delay(seconds) and **dir** url where controller i
 ###Hotkeys:
 - CTRL+WIN+F4 Global Pause
 - CTRL+WIN+F2 Global Resume
-- Alt+Shfit+F4 Kill application - non reversible without manual restart
+- Alt+Shfit+F4 Kill application - non reversible without manual application restart
