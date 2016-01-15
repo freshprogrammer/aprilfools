@@ -313,12 +313,23 @@ namespace Generics
             return logRecords.Count;
         }
 
-        public static string GetLogData()
+        public static string GetLogData(int count)
         {
             string result = "";
-            foreach (string l in logRecords)
+            if (count == -1)//include all
             {
-                result += l + "\n";
+                foreach (string l in logRecords)
+                {
+                    result += l + "\n";
+                }
+            }
+            else
+            {
+                if (count > logRecords.Count) count = logRecords.Count;
+                for (int x = logRecords.Count - count; x<logRecords.Count; x++)
+                {
+                    result += logRecords[x] + "\n";
+                }
             }
             return result.TrimEnd();
         }
@@ -716,10 +727,20 @@ namespace Generics
 
         public override string ToString()
         {
+            return GetNextEvents(-1);
+        }
+
+        public string GetNextEvents(int eventDisplayLimit)
+        {
+            //input -1 for all
+            int count = 0;
+            if(eventDisplayLimit==-1)eventDisplayLimit = schedule.Count;
             string result = "";
-            foreach(ScheduledEvent<T> e in schedule)
+            foreach (ScheduledEvent<T> e in schedule)
             {
                 result += e.Time.ToString("MM/dd/yyyy hh:mm:ss tt") + " " + e.Event + "\n";
+                if (++count >= eventDisplayLimit)
+                    break;
             }
             return result.TrimEnd();
         }

