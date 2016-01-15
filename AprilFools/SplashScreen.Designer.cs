@@ -36,7 +36,6 @@
             // pictureBox1
             // 
             this.pictureBox1.Image = global::AprilFools.Properties.Resources.get_windows_10_crop;
-            this.pictureBox1.InitialImage = ((System.Drawing.Image)(resources.GetObject("pictureBox1.InitialImage")));
             this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
             this.pictureBox1.Name = "pictureBox1";
