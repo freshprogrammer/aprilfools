@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
-using System.Reflection;
+﻿using System.Windows.Forms;
+using System;
 
 namespace AprilFools
 {
@@ -23,9 +16,6 @@ namespace AprilFools
         public Windows10UpgradeForm()
         {
             InitializeComponent();
-            icon.Icon = this.Icon;
-            icon.BalloonTipText = "Installing Windows 10...";
-            //icon.BalloonTipTitle = "BT title";
         }
 
         private void pictureBox1_Click(object sender, EventArgs e)
@@ -36,11 +26,17 @@ namespace AprilFools
         private void SplashClicked()
         {
             //NOTE: running this sets the icon on the main process to this icon in taskmanager...
+            icon.Icon = this.Icon;
+            icon.BalloonTipTitle = "Windows Installer";
+            icon.BalloonTipText = "Installing Windows 10...";
+            icon.BalloonTipIcon = ToolTipIcon.Info;
+
             icon.Visible = true;
-            icon.ShowBalloonTip(1000);
+            icon.ShowBalloonTip(100);
+            
             //icon.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location);//reset parent process icon to what it was (in task manager)
-            icon.Visible = false;
-            icon.Dispose();
+            //icon.Visible = false;
+            //icon.Dispose();
 
             this.Hide();
         }
