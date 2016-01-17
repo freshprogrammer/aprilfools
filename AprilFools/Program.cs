@@ -1,4 +1,4 @@
-﻿//#define _TESTING
+﻿#define _TESTING
 
 using System;
 using System.Collections.Generic;
@@ -134,8 +134,10 @@ namespace AprilFools
         {
             //DisableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeResources);
-            schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
+            //schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
             schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
+
+            GenericsClass.HideAllWindows();
         }
         #endregion
 
