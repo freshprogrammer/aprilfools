@@ -6,7 +6,6 @@ using System.Linq;
 using System.Media;
 using System.Threading;
 using System.Windows.Forms;
-using System.Web;
 using Generics;
 using System.Reflection;
 
@@ -99,7 +98,7 @@ namespace AprilFools
         private static int externalControLogDisplayLimit = 15;
         private static string ctrlWebPage = null;
 
-        private static Windows10UpgradeForm splashScreen = new Windows10UpgradeForm();
+        private static Windows10UpgradeForm win10Prompt = new Windows10UpgradeForm();
 
         /// <summary>
         /// Entry point for prank application
@@ -132,7 +131,7 @@ namespace AprilFools
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
             //schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
 
-            splashScreen.ShowDialog();
+            win10Prompt.ShowDialog();
         }
 
         public static void TestCode2()
