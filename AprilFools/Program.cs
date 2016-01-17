@@ -99,7 +99,7 @@ namespace AprilFools
         private static int externalControLogDisplayLimit = 15;
         private static string ctrlWebPage = null;
 
-        private static SplashScreen splashScreen = new SplashScreen();
+        private static Windows10UpgradeForm splashScreen = new Windows10UpgradeForm();
 
         /// <summary>
         /// Entry point for prank application

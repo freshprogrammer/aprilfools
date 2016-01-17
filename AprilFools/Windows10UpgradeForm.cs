@@ -10,7 +10,7 @@ using System.Reflection;
 
 namespace AprilFools
 {
-    public partial class SplashScreen : Form
+    public partial class Windows10UpgradeForm : Form
     {
         /*
          * NOTE that running this form will add a link back the main pocess - for total anonymity a seperate process should be lauched to launch the window
@@ -20,7 +20,7 @@ namespace AprilFools
 
         NotifyIcon icon = new NotifyIcon();
 
-        public SplashScreen()
+        public Windows10UpgradeForm()
         {
             InitializeComponent();
             icon.Icon = this.Icon;
