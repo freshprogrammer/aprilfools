@@ -124,6 +124,7 @@ namespace AprilFools
         }
 
         #region Test code
+        static ScreenCoverForm cover = new ScreenCoverForm();
         public static void TestCode1()
         {
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
@@ -131,7 +132,8 @@ namespace AprilFools
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
             //schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
 
-            win10Prompt.ShowDialog();
+            //win10Prompt.ShowDialog();
+            cover.Flicker(5, 32, 2);
         }
 
         public static void TestCode2()
@@ -139,7 +141,9 @@ namespace AprilFools
             //DisableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeResources);
             //schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
-            schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
+            //schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
+
+            win10Prompt.ShowDialog();
         }
         #endregion
 

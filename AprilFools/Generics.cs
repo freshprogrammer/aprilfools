@@ -213,7 +213,7 @@ namespace Generics
         /// <summary>
         /// calc giant square from top left to bottom right
         /// </summary>
-        public static void CalcSceenBounds()
+        public static void CalcAllSceensBounds()
         {
             int x = 0, y = 0, right = 0, bottom = 0;
             foreach (Screen s in Screen.AllScreens)
@@ -228,7 +228,7 @@ namespace Generics
 
         public static void MoveCursorToCorner(Corner c)
         {
-            CalcSceenBounds();
+            CalcAllSceensBounds();
 
             if (c == Corner.Random)
                 c = (Corner)Random.Next(0, 4);
@@ -857,14 +857,14 @@ namespace Generics
         {
             speed = 0;
             SetHeading(0);
-            GenericsClass.CalcSceenBounds();
+            GenericsClass.CalcAllSceensBounds();
         }
 
         public CursorWanderAI(float speed, float startHeading)
         {
             this.speed = speed;
             SetHeading(startHeading);
-            GenericsClass.CalcSceenBounds();
+            GenericsClass.CalcAllSceensBounds();
         }
 
         public void Wander(float delta)
