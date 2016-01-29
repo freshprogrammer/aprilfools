@@ -64,6 +64,7 @@
 		if(GetInput("Play_A3")==="Y")		AppendCmd("PlaySound_Asterisk3X");
 		if(GetInput("Play_H3")==="Y")		AppendCmd("PlaySound_Hand3X");
 		if(GetInput("Play_E3")==="Y")		AppendCmd("PlaySound_Exclamation3X");
+		if(GetInput("Flicker5")==="Y")		AppendCmd("FlickerScreen0_5_Times");
 		//schedules
 		if(GetInput("Schedule")==="C") 		AppendCmd("ClearSchedule");
 		if(GetInput("Schedule")==="SE") 	AppendCmd("CreateSchedule_SuperEasy");
@@ -105,6 +106,7 @@
 		CreateAControlButton("Play exclamation 3x","Play_E3");
 		//CreateAControlButton("Play question"   ,"Play_Q");//doesnt work
 		//CreateAControlButton("Bomb beep"		,"Bomb");
+		CreateAControlButton("Flicker Screen 5x","Flicker5");
 	}
 	
 	function CreateScheduleSelector()

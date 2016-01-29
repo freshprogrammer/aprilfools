@@ -213,7 +213,7 @@ namespace Generics
         /// <summary>
         /// calc giant square from top left to bottom right
         /// </summary>
-        public static void CalcSceenBounds()
+        public static void CalcAllSceensBounds()
         {
             int x = 0, y = 0, right = 0, bottom = 0;
             foreach (Screen s in Screen.AllScreens)
@@ -228,7 +228,7 @@ namespace Generics
 
         public static void MoveCursorToCorner(Corner c)
         {
-            CalcSceenBounds();
+            CalcAllSceensBounds();
 
             if (c == Corner.Random)
                 c = (Corner)Random.Next(0, 4);
@@ -313,12 +313,23 @@ namespace Generics
             return logRecords.Count;
         }
 
-        public static string GetLogData()
+        public static string GetLogData(int count)
         {
             string result = "";
-            foreach (string l in logRecords)
+            if (count == -1)//include all
             {
-                result += l + "\n";
+                foreach (string l in logRecords)
+                {
+                    result += l + "\n";
+                }
+            }
+            else
+            {
+                if (count > logRecords.Count) count = logRecords.Count;
+                for (int x = logRecords.Count - count; x<logRecords.Count; x++)
+                {
+                    result += logRecords[x] + "\n";
+                }
             }
             return result.TrimEnd();
         }
@@ -716,10 +727,20 @@ namespace Generics
 
         public override string ToString()
         {
+            return GetNextEvents(-1);
+        }
+
+        public string GetNextEvents(int eventDisplayLimit)
+        {
+            //input -1 for all
+            int count = 0;
+            if(eventDisplayLimit==-1)eventDisplayLimit = schedule.Count;
             string result = "";
-            foreach(ScheduledEvent<T> e in schedule)
+            foreach (ScheduledEvent<T> e in schedule)
             {
                 result += e.Time.ToString("MM/dd/yyyy hh:mm:ss tt") + " " + e.Event + "\n";
+                if (++count >= eventDisplayLimit)
+                    break;
             }
             return result.TrimEnd();
         }
@@ -836,14 +857,14 @@ namespace Generics
         {
             speed = 0;
             SetHeading(0);
-            GenericsClass.CalcSceenBounds();
+            GenericsClass.CalcAllSceensBounds();
         }
 
         public CursorWanderAI(float speed, float startHeading)
         {
             this.speed = speed;
             SetHeading(startHeading);
-            GenericsClass.CalcSceenBounds();
+            GenericsClass.CalcAllSceensBounds();
         }
 
         public void Wander(float delta)
