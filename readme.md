@@ -1,5 +1,6 @@
 ##April fools prank application
 ###Description
+v.1.5
 Starts silently and runs in background. Automatically creates a random schedule of pranks spread out for the next 8 hour user session. Can be remotely controlled and disabled from a simple php page. Default exe name is "jucheck.exe". This application does not read or write anything from local disc and uploads current prank schedule via web ~every 5 seconds.
 
 ###Pranks (can be automatically scheduled for start/stop/duration, or be executed manually from web) 
@@ -7,9 +8,10 @@ Starts silently and runs in background. Automatically creates a random schedule 
 - Erratic mouse movement for X seconds
 - Wander mouse AI for X seconds
 - Move Cursor to random corner of screen
-- Bogus popups
 - Random sounds
 - Map next X keys to other keys
+- Popup spoof prompt to upgrade to Windows 10 that cant be closed easily and says its installing if clicked
+- Flicker black screen
 
 
 ###Setup

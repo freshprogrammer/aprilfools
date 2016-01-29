@@ -42,12 +42,19 @@ namespace AprilFools
             this.MinimizeBox = false;
             this.ShowInTaskbar = false;
             this.StartPosition = FormStartPosition.Manual;
+            //this.TopMost = true;//this seems to require focus on show
 
             this.ClientSize = GenericsClass.ScreenBounds.Size;
             this.Location = GenericsClass.ScreenBounds.Location;
         }
 
-        public void Flicker(int count, int delay, int screenNumber)
+        /// <summary>
+        /// displays black form over everything on the screen (maybe not the taskbar). Flashes X times for Xms each time on X monitor
+        /// </summary>
+        /// <param name="flickerCount">Number of times the screen will flicker</param>
+        /// <param name="delay">time in ms flicker is on screen and how long between flickers</param>
+        /// <param name="screenNumber">screen number to flicker (-1 for all)</param>
+        public void Flicker(int flickerCount, int delay=50, int screenNumber=0)
         {
             if (screenNumber >= Screen.AllScreens.Length)
                 screenNumber = 0;
@@ -61,7 +68,7 @@ namespace AprilFools
                 this.Location = Screen.AllScreens[screenNumber].Bounds.Location;
                 this.Size = Screen.AllScreens[screenNumber].Bounds.Size;
             }
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < flickerCount; i++)
             {
                 Show();
                 DateTime future = DateTime.Now.AddMilliseconds(delay);

@@ -130,20 +130,16 @@ namespace AprilFools
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
             //EnableKeyMapping();
             //OpenPopupNow(PrankerPopup.ChromeGPUProcessCrash);
-            //schedule.AddEvent(PrankerEvent.PlaySound_Hand3X, 0);
 
-            //win10Prompt.ShowDialog();
-            cover.Flicker(5, 32, 2);
+            schedule.AddEvent(PrankerEvent.FlickerScreen0_5_Times, 0);
         }
 
         public static void TestCode2()
         {
             //DisableKeyMapping();
-            //OpenPopupNow(PrankerPopup.ChromeResources);
-            //schedule.AddEvent(PrankerEvent.RunEraticMouse10s, 0);
-            //schedule.AddEvent(PrankerEvent.PlaySound_Asterisk3X, 0);
 
-            win10Prompt.ShowDialog();
+            schedule.AddEvent(PrankerEvent.PopupWindows10Upgrade, 0);
+            schedule.AddEvent(PrankerEvent.FlickerScreen0_10_Times, 0);
         }
         #endregion
 
@@ -1154,6 +1150,15 @@ namespace AprilFools
                     EnableKeyMapping(10);
                     schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
+                case PrankerEvent.PopupWindows10Upgrade:
+                    win10Prompt.ShowDialog();
+                    break;
+                case PrankerEvent.FlickerScreen0_5_Times:
+                    cover.Flicker(5);
+                    break;
+                case PrankerEvent.FlickerScreen0_10_Times:
+                    cover.Flicker(10);
+                    break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
                     break;
@@ -1245,6 +1250,13 @@ namespace AprilFools
 
             //popup events
             CreateRandomPopup,
+
+            //Windows 10 popup
+            PopupWindows10Upgrade,
+
+            //screen flickering
+            FlickerScreen0_5_Times,
+            FlickerScreen0_10_Times,
         }
         #endregion
     }
