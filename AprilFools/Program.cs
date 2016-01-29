@@ -52,7 +52,7 @@ namespace AprilFools
 
         private static bool _externalControlThreadRunning = true;//should always run unless all external control is disabled
         private static bool _soundThreadRunning = true;//should always run unless all sounds are disabled
-        private static bool _popupThreadRunning = false;//should always run unless all popups are disabled
+        private static bool _popupThreadRunning = true;//should always run unless all popups are disabled
         private static bool _eraticMouseRunning = false;
         private static bool _wanderMouseRunning = false;
         private static bool _eraticKeyboardThreadRunning = false;
@@ -139,7 +139,7 @@ namespace AprilFools
             //DisableKeyMapping();
 
             schedule.AddEvent(PrankerEvent.PopupWindows10Upgrade, 0);
-            schedule.AddEvent(PrankerEvent.FlickerScreen0_10_Times, 0);
+            //schedule.AddEvent(PrankerEvent.FlickerScreen0_10_Times, 0);
         }
         #endregion
 
@@ -162,7 +162,6 @@ namespace AprilFools
             switch (scheduleType)
             {
                 case PrankerSchedule.SuperEasy:
-                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
                     plan.Add(PrankerEvent.MapNext5Keys);
@@ -170,7 +169,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_SuperEasy, sessionDurration);
                     break;
                 case PrankerSchedule.Easy:
-                    if (_popupThreadRunning) for (int i=1;i<=1;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
                     plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -181,7 +179,6 @@ namespace AprilFools
                     break;
                 default:
                 case PrankerSchedule.Medium:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse5s);
                     plan.Add(PrankerEvent.RunEraticMouse10s);
@@ -195,7 +192,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_SingleKeySwaps:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -204,7 +200,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_SingleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_DoubleKeySwaps:
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 2;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 4;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -214,7 +209,6 @@ namespace AprilFools
                     if (loopSession) schedule.AddEvent(PrankerEvent.CreateSchedule_Medium_DoubleKeySwaps, sessionDurration);
                     break;
                 case PrankerSchedule.Medium_PlusSome://just turned some minor stuff up like move cursor to corner
-                    if (_popupThreadRunning) for (int i=1;i<=2;i++) plan.Add(PrankerEvent.CreateRandomPopup);
                     for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunEraticMouse5s);
                     for (int i=1;i<= 3;i++) plan.Add(PrankerEvent.RunEraticMouse10s);
                     for (int i=1;i<= 5;i++) plan.Add(PrankerEvent.RunWanderMouse5s);
@@ -802,6 +796,9 @@ namespace AprilFools
                                 MessageBox.Show("Your system is running low on resources",
                                     "Microsoft Windows",MessageBoxButtons.OK,MessageBoxIcon.Warning);
                                 break;
+                            case PrankerPopup.Windows10Upgrade:
+                                win10Prompt.ShowDialog();
+                                break;
                         }
                         nextPopup = PrankerPopup.None;//clear till this is called again
                     }
@@ -842,6 +839,7 @@ namespace AprilFools
             ChromeBadDay,
             ChromeGPUProcessCrash,
             WindowsResources,
+            Windows10Upgrade,
         }
         #endregion
 
@@ -1151,13 +1149,15 @@ namespace AprilFools
                     schedule.AddEvent(PrankerEvent.StopMappingAllKeys, KeyMappingMaxDurration, true);
                     break;
                 case PrankerEvent.PopupWindows10Upgrade:
-                    win10Prompt.ShowDialog();
+                    nextPopup = PrankerPopup.Windows10Upgrade;
                     break;
                 case PrankerEvent.FlickerScreen0_5_Times:
-                    cover.Flicker(5);
+                    if(nextPopup==PrankerPopup.None)
+                        cover.Flicker(5);
                     break;
                 case PrankerEvent.FlickerScreen0_10_Times:
-                    cover.Flicker(10);
+                    if (nextPopup == PrankerPopup.None)
+                        cover.Flicker(10);
                     break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
