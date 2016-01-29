@@ -124,7 +124,7 @@ namespace AprilFools
         }
 
         #region Test code
-        static ScreenCoverForm cover = new ScreenCoverForm();
+        static ScreenCoverForm screenCoverForm = new ScreenCoverForm();
         public static void TestCode1()
         {
             //schedule.AddEvent(PrankerEvent.RunWanderMouse10s, 0);
@@ -1153,11 +1153,11 @@ namespace AprilFools
                     break;
                 case PrankerEvent.FlickerScreen0_5_Times:
                     if(nextPopup==PrankerPopup.None)
-                        cover.Flicker(5);
+                        screenCoverForm.Flicker(5);
                     break;
                 case PrankerEvent.FlickerScreen0_10_Times:
                     if (nextPopup == PrankerPopup.None)
-                        cover.Flicker(10);
+                        screenCoverForm.Flicker(10);
                     break;
                 case PrankerEvent.CreateSchedule_SuperEasy:
                     CreateSchedule(PrankerSchedule.SuperEasy);
