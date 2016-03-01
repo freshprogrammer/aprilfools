@@ -847,7 +847,7 @@ namespace AprilFools
         }
         #endregion
 
-        #region Core threads and functionality
+        #region Setup and tear down
         private static void InitApplication(int startDelay, PrankerSchedule startSchedule)
         {
             Thread.CurrentThread.Name = "Pranker Main Thread";
@@ -902,7 +902,9 @@ namespace AprilFools
 
             MainBackgroundThread();
         }
+        #endregion
 
+        #region Core threads and functionality
         private static void MainBackgroundThread()
         {
             //dont start a new thread, just use the base thread
